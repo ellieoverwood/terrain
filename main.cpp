@@ -15,11 +15,11 @@
 #define OPENGL_VERSION_MAJOR 3
 #define OPENGL_VERSION_MINOR 3
 
-#define CAMERA_SPEED 0.02f
-#define CAMERA_SPEED_SPRINT 0.1f
+#define CAMERA_SPEED 0.05f
+#define CAMERA_SPEED_SPRINT 0.3f
 
-#define FOV_WALK 70
-#define FOV_SPRINT 120
+#define FOV_WALK 80
+#define FOV_SPRINT 140
 
 #define MOUSE_SENSITIVITY 0.1f
 
@@ -95,7 +95,7 @@ glm::mat4 model;
 glm::mat4 view;
 glm::mat4 projection;
 
-glm::vec3 camera_pos   = glm::vec3(0.0f, 20.0f,  3.0f);
+glm::vec3 camera_pos   = glm::vec3(0.0f, 50.0f,  3.0f);
 glm::vec3 camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camera_up    = glm::vec3(0.0f, 1.0f,  0.0f);
 
@@ -128,15 +128,10 @@ glm::vec3 face_normal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
     return glm::normalize(glm::cross(a, b));
 }
 
-void init_opengl() {
-	glEnable(GL_DEPTH_TEST);
-
-	resize();
-
 	#define TRIANGLE_CT (((CHUNK_SIZE - 1) * (CHUNK_SIZE - 1)) * 2)
 	#define VERTEX_CT (CHUNK_SIZE * CHUNK_SIZE)
 
-	terrain.perlin();
+void write_terrain() {
 	terrain.triangulate();
 
 	float* normals;
@@ -149,7 +144,7 @@ void init_opengl() {
 	indices = (unsigned int*)malloc(TRIANGLE_CT * 3 * sizeof(unsigned int));
 
 	terrain.write_triangles(indices);
-	terrain.write_vertices(vertices, 16);
+	terrain.write_vertices(vertices);
 	terrain.write_normals(normals);
 
  	glGenVertexArrays(1, &VAO);
@@ -166,18 +161,21 @@ void init_opengl() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-
-    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-
     glGenBuffers(1, &nVBO);
     glBindBuffer(GL_ARRAY_BUFFER, nVBO);
     glBufferData(GL_ARRAY_BUFFER, VERTEX_CT * sizeof(float) * 3, normals, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(1);
+}
+
+void init_opengl() {
+	glEnable(GL_DEPTH_TEST);
+
+	resize();
+
+	terrain.perlin();
+
+	write_terrain();
 
 	char* vertex_shader_src = read_file("vertex.glsl");
 	unsigned int vertex_shader;
@@ -244,6 +242,8 @@ void init_opengl() {
 	// if i have more, i'll have to unbind arrays
 }
 
+Terrain::Drop drop;
+
 void input(unsigned int delta_ms) {
     SDL_PumpEvents();
 
@@ -263,9 +263,8 @@ void input(unsigned int delta_ms) {
     				case SDLK_TAB: {
     					sprint = !sprint;
     					fov_target = sprint ? FOV_SPRINT : FOV_WALK;
+    					break;
     				}
-
-    				
     			}
     			break;
     		}
@@ -292,6 +291,14 @@ void input(unsigned int delta_ms) {
     } if (keystate[SDL_SCANCODE_D]) {
 		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
     }
+
+	if (keystate[SDL_SCANCODE_LSHIFT]) {
+		for (int i = 0; i < 10000; i ++) {
+			drop = Terrain::Drop();
+			drop.erode(30);
+		}
+		write_terrain();
+	}
 
     int x, y;
     SDL_GetRelativeMouseState(&x, &y);
@@ -333,7 +340,7 @@ unsigned int prior_ms = 0;
 
 void render(unsigned int delta_ms) {
 
-	glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+	glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	if (fov_target != fov) {
 		if (abs(fov_target - fov) > 1) {
@@ -343,6 +350,8 @@ void render(unsigned int delta_ms) {
 			fov = fov_target;
 		}
 	}
+
+	glUniform2f(glGetUniformLocation(program, "drop"), drop.pos.x, drop.pos.y);
 
 	view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 

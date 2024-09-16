@@ -2,8 +2,8 @@
 #include "noise.hpp"
 
 typedef struct {
-    double x;
-    double y;
+    float x;
+    float y;
 } vec2;
 
 vec2 random_gradient(int ix, int iy) {
@@ -27,36 +27,36 @@ vec2 random_gradient(int ix, int iy) {
     return v; 
 }
 
-double dot_grid_gradient(int ix, int iy, double x, double y) {
+float dot_grid_gradient(int ix, int iy, float x, float y) {
     vec2 grad = random_gradient(ix, iy);
 
-    double dx = x - (double)ix; // distances from grid
-    double dy = y - (double)iy;
+    float dx = x - (float)ix; // distances from grid
+    float dy = y - (float)iy;
 
     return (dx * grad.x + dy * grad.y);
 }
 
-double interpolate(double a0, double a1, double w) {
+float interpolate(float a0, float a1, float w) {
     return (a1 - a0) * (3.0 - w * 2.0) * w * w + a0;
 }
 
-double noise(double x, double y) {
+float noise(float x, float y) {
     int x0 = (int)x; // all four corners of bounding box
     int y0 = (int)y;
     int x1 = x0 + 1;
     int y1 = y0 + 1;
 
-    double sx = x - (double)x0; // influence
-    double sy = y - (double)y0;
+    float sx = x - (float)x0; // influence
+    float sy = y - (float)y0;
 
-    double n0 = dot_grid_gradient(x0, y0, x, y); // top two corners
-    double n1 = dot_grid_gradient(x1, y0, x, y);
-    double ix0 = interpolate(n0, n1, sx);
+    float n0 = dot_grid_gradient(x0, y0, x, y); // top two corners
+    float n1 = dot_grid_gradient(x1, y0, x, y);
+    float ix0 = interpolate(n0, n1, sx);
 
     n0 = dot_grid_gradient(x0, y1, x, y); // bottom two corners
     n1 = dot_grid_gradient(x1, y1, x, y);
-    double ix1 = interpolate(n0, n1, sx);
+    float ix1 = interpolate(n0, n1, sx);
 
-    double val = interpolate(ix0, ix1, sy); // all together
+    float val = interpolate(ix0, ix1, sy); // all together
     return val;
 }

@@ -15,7 +15,8 @@ float LinearizeDepth(float depth)
 
 void main()
 {
-    float distance = abs(1.0f - (LinearizeDepth(gl_FragCoord.z) / far));
-    vec3 transformed_color = mix(vec3(0.1f, 0.1f, 0.2f), color, distance);
-    FragColor = vec4(transformed_color.xyz, 1.0f);
-} 
+    FragColor = vec4(color, 0.0);
+    //float distance = abs(1.0f - (LinearizeDepth(gl_FragCoord.z) / far));
+    //vec3 transformed_color = mix(vec3(0.53f, 0.81f, 0.92), color, distance);
+    //FragColor = vec4(transformed_color.xyz, 1.0f);
+}

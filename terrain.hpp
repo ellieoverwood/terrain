@@ -1,5 +1,5 @@
 #pragma once
-#define CHUNK_SIZE 1000
+#define CHUNK_SIZE 256
 #include "glm/glm.hpp"
 
 class Terrain {
@@ -9,21 +9,33 @@ public:
 	void triangulate();
 	void triangle_normals();
 	void write_triangles(unsigned int* to);
-	void write_vertices(float* vertices, int scale);
+	void write_vertices(float* vertices);
 	void write_normals(float* normals);
 	unsigned int size;
 	class Triangle {
 	public:
-		double* a;
-		double* b;
-		double* c;
+		float* a;
+		float* b;
+		float* c;
 	};
-	double*   heightmap;
+	class Drop {
+	public:
+		Drop();
+		glm::vec2 pos;
+		glm::vec2 old_pos;
+		glm::vec2 velocity;
+		float sediment;
+		glm::vec3 normal(int x, int y);
+		glm::vec3 smooth_normal();
+		bool step();
+		void erode(int iterations);
+	};
+	float*   heightmap;
 	Triangle* triangles;
-	double* vertex_at(unsigned int x, unsigned int y);
-	unsigned int tx(double* a);
-	unsigned int ty(double* a);
-	unsigned int tpos(double* a);
+	float* vertex_at(unsigned int x, unsigned int y);
+	unsigned int tx(float* a);
+	unsigned int ty(float* a);
+	unsigned int tpos(float* a);
 };
 
 extern Terrain terrain;
