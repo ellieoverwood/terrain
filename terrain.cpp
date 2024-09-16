@@ -4,6 +4,7 @@
 #include "noise.hpp"
 #include <stdio.h>
 #include <math.h>
+#include <algorithm>
 
 Terrain terrain = Terrain(CHUNK_SIZE);
 
@@ -122,13 +123,16 @@ unsigned int Terrain::ty(float* a) {
 	return floor(((a - heightmap)) / (float)size);
 }
 
+int Terrain::Drop::at() {
+	return (int)floor(pos.y) * terrain.size + (int)floor(pos.x);
+}
+
 Terrain::Drop::Drop() {
 	pos.x = (rand() / (float)RAND_MAX) * terrain.size;
 	pos.y = (rand() / (float)RAND_MAX) * terrain.size;
-	old_pos = pos;
-	velocity.x = rand() / (float)RAND_MAX - 0.5;
-	velocity.y = rand() / (float)RAND_MAX - 0.5;
 	sediment = 0;
+	h_old = terrain.heightmap[at()];
+	water = 1;
 }
 
 glm::vec3 Terrain::Drop::normal(int x, int y) {
@@ -164,45 +168,35 @@ float flatness(glm::vec3 norm) {
     return abs(3.1415 / 2 - acos(dot));
 }
 
-bool Terrain::Drop::step() {
-	old_pos = pos;
-	if (pos.x < 2 || pos.x + 2 > terrain.size || pos.y < 2 || pos.y + 2 > terrain.size) {
-		return true;
-	}
+#define INERTIA 0.3f
+#define MIN_SLOPE 0.1f
+#define CAPACITY 1.0f
+void Terrain::Drop::erode() {
 	glm::vec3 norm = smooth_normal();
+
 	glm::vec3 grad;
+
+	if (norm.x == 0 || norm.y == 0) {
+		grad.x = (rand() / (float)RAND_MAX) * 2 - 1;
+		grad.y = (rand() / (float)RAND_MAX) * 2 - 1;
+	}
+
 	grad.x = norm.x * norm.z;
 	grad.y = norm.y * norm.z;
 	grad.z = -(norm.x * norm.x) - (norm.y * norm.y);
 	grad = glm::normalize(grad);
-	//if (abs(grad.z) < 0.1) {
-	//	return true;
-	//}
-	velocity /= 1.1;
-	velocity.x += grad.x;
-	velocity.y += grad.y;
-	pos += velocity;
 
-	if (norm.x == 0 || norm.y == 0) {
-		return true;
-	}
-	float slope = 0.5 - abs(grad.z);
-	if (slope < 0) slope = 0;
-	float deposit = sediment * 0.3 * slope;
-	float erosion = 0.02 * abs(grad.z);
-	//printf("%f %f %f %f\n", old_pos.x, old_pos.y, pos.x, pos.y);
-	sediment += erosion - deposit;
-	terrain.heightmap[(int)round(old_pos.y) * terrain.size + (int)round(old_pos.x)] += deposit - erosion;
-	return false;
-}
+	dir.x = dir.x * INERTIA - (-grad.x) * (1 - INERTIA);
+	dir.y = dir.y * INERTIA - (-grad.y) * (1 - INERTIA);
 
-void Terrain::Drop::erode(int iterations) {
-	bool last_step = true;
-	for (int i = 0; i < iterations; i ++) {
-		last_step = step();
-		if (last_step) break;
-	}
-	if (!last_step) {
-		terrain.heightmap[(int)round(old_pos.y) * terrain.size + (int)round(old_pos.x)] += sediment;
-	}
+	pos += dir;
+
+	float h = terrain.heightmap[at()];
+	float h_diff = h - h_old;
+	h_old = h;
+
+	float capacity = std::max(h_diff*-1, MIN_SLOPE) * vel * water * CAPACITY;
+
+	// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf
+
 }

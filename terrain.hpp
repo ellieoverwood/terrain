@@ -22,13 +22,16 @@ public:
 	public:
 		Drop();
 		glm::vec2 pos;
-		glm::vec2 old_pos;
-		glm::vec2 velocity;
-		float sediment;
+		glm::vec2 dir;
+		float     vel;
+		float     water;
+		float     sediment;
+		float     h_old;
+		void erode();
+	private:
 		glm::vec3 normal(int x, int y);
 		glm::vec3 smooth_normal();
-		bool step();
-		void erode(int iterations);
+		int       at();
 	};
 	float*   heightmap;
 	Triangle* triangles;

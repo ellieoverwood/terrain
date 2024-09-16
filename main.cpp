@@ -242,7 +242,7 @@ void init_opengl() {
 	// if i have more, i'll have to unbind arrays
 }
 
-Terrain::Drop drop;
+Terrain::Drop* drop;
 
 void input(unsigned int delta_ms) {
     SDL_PumpEvents();
@@ -293,10 +293,7 @@ void input(unsigned int delta_ms) {
     }
 
 	if (keystate[SDL_SCANCODE_LSHIFT]) {
-		for (int i = 0; i < 10000; i ++) {
-			drop = Terrain::Drop();
-			drop.erode(30);
-		}
+		drop->erode();
 		write_terrain();
 	}
 
@@ -351,7 +348,7 @@ void render(unsigned int delta_ms) {
 		}
 	}
 
-	glUniform2f(glGetUniformLocation(program, "drop"), drop.pos.x, drop.pos.y);
+	glUniform2f(glGetUniformLocation(program, "drop"), drop->pos.x, drop->pos.y);
 
 	view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 
@@ -370,6 +367,8 @@ void swap() {
 int main() {
 	init_sdl();
 	init_opengl();
+
+	drop = new Terrain::Drop();
 
 	for (;;) {
 		unsigned int time = SDL_GetTicks();
