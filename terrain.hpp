@@ -1,5 +1,5 @@
 #pragma once
-#define CHUNK_SIZE 256
+#define CHUNK_SIZE 300
 #include "glm/glm.hpp"
 
 class Terrain {
@@ -26,12 +26,13 @@ public:
 		float     vel;
 		float     water;
 		float     sediment;
-		float     h_old;
+		glm::vec3 p_old;
 		void erode();
 	private:
 		glm::vec3 normal(int x, int y);
 		glm::vec3 smooth_normal();
 		int       at();
+		int       old_at();
 	};
 	float*   heightmap;
 	Triangle* triangles;

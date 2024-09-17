@@ -293,7 +293,12 @@ void input(unsigned int delta_ms) {
     }
 
 	if (keystate[SDL_SCANCODE_LSHIFT]) {
-		drop->erode();
+		for (int i = 0; i < 10000; i ++) {
+			Terrain::Drop _drop = Terrain::Drop();
+			for (int j = 0; j < 20; j ++) {
+				_drop.erode();
+			}
+		}
 		write_terrain();
 	}
 

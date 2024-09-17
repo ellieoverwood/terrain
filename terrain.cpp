@@ -127,11 +127,17 @@ int Terrain::Drop::at() {
 	return (int)floor(pos.y) * terrain.size + (int)floor(pos.x);
 }
 
+int Terrain::Drop::old_at() {
+	return (int)floor(p_old.y) * terrain.size + (int)floor(p_old.x);
+}
+
 Terrain::Drop::Drop() {
 	pos.x = (rand() / (float)RAND_MAX) * terrain.size;
 	pos.y = (rand() / (float)RAND_MAX) * terrain.size;
 	sediment = 0;
-	h_old = terrain.heightmap[at()];
+	p_old.x = pos.x;
+	p_old.y = pos.y;
+	vel = 3;
 	water = 1;
 }
 
@@ -141,6 +147,9 @@ glm::vec3 Terrain::Drop::normal(int x, int y) {
 	float e  = *terrain.vertex_at(x + 1, y    );
 	float s  = *terrain.vertex_at(x    , y + 1);
 	float w  = *terrain.vertex_at(x - 1, y);
+
+	//printf("%f %f %f %f %d %d\n", n, e, s, w, x, y);
+
 
 	glm::vec3 norm = glm::vec3((e - w) * 0.5, (s - n) * 0.5, -1);
 	return glm::normalize(norm);
@@ -160,6 +169,7 @@ glm::vec3 Terrain::Drop::smooth_normal() {
 
     glm::vec3 sum = (R + L + T + B + TR + TL + BR + BL);
 
+
     return glm::normalize(sum);
 }
 
@@ -171,15 +181,20 @@ float flatness(glm::vec3 norm) {
 #define INERTIA 0.3f
 #define MIN_SLOPE 0.1f
 #define CAPACITY 1.0f
+#define DEPOSITION 0.5f
+#define EROSION 0.5f
+#define GRAVITY 0.5f
+#define EVAPORATION 0.3f
 void Terrain::Drop::erode() {
-	glm::vec3 norm = smooth_normal();
+	if (pos.x < 2 || pos.x > terrain.size - 2 || pos.y < 2 || pos.y > terrain.size - 2) return;
 
+	p_old.x = pos.x;
+	p_old.y = pos.y;
+
+	glm::vec3 norm = smooth_normal();
 	glm::vec3 grad;
 
-	if (norm.x == 0 || norm.y == 0) {
-		grad.x = (rand() / (float)RAND_MAX) * 2 - 1;
-		grad.y = (rand() / (float)RAND_MAX) * 2 - 1;
-	}
+	if (norm.x == 0 || norm.y == 0) return;
 
 	grad.x = norm.x * norm.z;
 	grad.y = norm.y * norm.z;
@@ -192,10 +207,25 @@ void Terrain::Drop::erode() {
 	pos += dir;
 
 	float h = terrain.heightmap[at()];
-	float h_diff = h - h_old;
-	h_old = h;
+	float h_diff = h - terrain.heightmap[old_at()];
+	if (h_diff == 0) return;
 
 	float capacity = std::max(h_diff*-1, MIN_SLOPE) * vel * water * CAPACITY;
+
+	if (sediment > capacity) {
+		float deposition = (sediment - capacity) * DEPOSITION; // change if problem w spikes
+		sediment -= deposition;
+		terrain.heightmap[old_at()] += deposition;
+	} else {
+		float erosion = std::min((capacity - sediment) * EROSION, h_diff * -1);
+		sediment += erosion;
+		terrain.heightmap[old_at()] -= erosion;
+	}
+
+	printf("%f\n", vel);
+	vel = (float)sqrt(std::max((vel * vel + h_diff * GRAVITY), 1.0f));
+	printf("%f\n", vel);
+	water *= (1 - EVAPORATION);
 
 	// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf
 
