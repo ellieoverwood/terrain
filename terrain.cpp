@@ -20,7 +20,7 @@ float* Terrain::vertex_at(unsigned int x, unsigned int y) {
 	return &heightmap[y*size+x];
 }
 
-void Terrain::perlin() {
+void Terrain::perlin(int xoff, int yoff) {
 	for (int y = 0; y < size; y ++) {
 		for (int x = 0; x < size; x ++) {
 			float divisor = 400.0;
@@ -28,7 +28,7 @@ void Terrain::perlin() {
 			float val = 0.0;
 
 			for (int i = 0; i < 16; i ++) {
-				val += noise(x / divisor, y / divisor) * influence;
+				val += noise((x + xoff) / divisor, (y + yoff) / divisor) * influence;
 				divisor /= 2;
 				influence /= 2;
 			}
@@ -178,13 +178,13 @@ float flatness(glm::vec3 norm) {
     return abs(3.1415 / 2 - acos(dot));
 }
 
-#define INERTIA 0.3f
-#define MIN_SLOPE 0.1f
-#define CAPACITY 1.0f
-#define DEPOSITION 0.5f
-#define EROSION 0.5f
+#define INERTIA 0.2f
+#define MIN_SLOPE 0.01f
+#define CAPACITY 2.0f
+#define DEPOSITION 0.8f
+#define EROSION 0.01f
 #define GRAVITY 0.5f
-#define EVAPORATION 0.3f
+#define EVAPORATION 0.1f
 void Terrain::Drop::erode() {
 	if (pos.x < 2 || pos.x > terrain.size - 2 || pos.y < 2 || pos.y > terrain.size - 2) return;
 
@@ -208,23 +208,25 @@ void Terrain::Drop::erode() {
 
 	float h = terrain.heightmap[at()];
 	float h_diff = h - terrain.heightmap[old_at()];
-	if (h_diff == 0) return;
 
-	float capacity = std::max(h_diff*-1, MIN_SLOPE) * vel * water * CAPACITY;
-
-	if (sediment > capacity) {
-		float deposition = (sediment - capacity) * DEPOSITION; // change if problem w spikes
-		sediment -= deposition;
-		terrain.heightmap[old_at()] += deposition;
+	if (h_diff > 0) {
+		float drop = std::min(h_diff, sediment);
+		terrain.heightmap[old_at()] += drop;
+		sediment -= drop;
 	} else {
-		float erosion = std::min((capacity - sediment) * EROSION, h_diff * -1);
-		sediment += erosion;
-		terrain.heightmap[old_at()] -= erosion;
+		float c = std::max(h_diff*-1, MIN_SLOPE) * vel * water * CAPACITY;
+		if (sediment > c) {
+			float drop = (sediment - c) * DEPOSITION;
+			sediment -= drop;
+			terrain.heightmap[old_at()] += drop;
+		} else {
+			float take = std::min((c-sediment) * EROSION, h_diff * -1);
+			sediment += take;
+			terrain.heightmap[old_at()] -= take;
+		}
 	}
 
-	printf("%f\n", vel);
 	vel = (float)sqrt(std::max((vel * vel + h_diff * GRAVITY), 1.0f));
-	printf("%f\n", vel);
 	water *= (1 - EVAPORATION);
 
 	// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf

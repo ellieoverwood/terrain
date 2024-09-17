@@ -173,7 +173,7 @@ void init_opengl() {
 
 	resize();
 
-	terrain.perlin();
+	terrain.perlin(0, 0);
 
 	write_terrain();
 

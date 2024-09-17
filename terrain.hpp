@@ -1,11 +1,11 @@
 #pragma once
-#define CHUNK_SIZE 300
+#define CHUNK_SIZE 256
 #include "glm/glm.hpp"
 
 class Terrain {
 public:
 	Terrain(unsigned int _size);
-	void perlin();
+	void perlin(int xoff, int yoff);
 	void triangulate();
 	void triangle_normals();
 	void write_triangles(unsigned int* to);
