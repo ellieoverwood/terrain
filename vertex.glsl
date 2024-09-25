@@ -6,8 +6,6 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-uniform vec2 drop;
-
 out vec3 color;
 
 float angle_yaxis(vec3 norm) {
@@ -35,9 +33,5 @@ void main()
         }
         color += vec3(normal.x / 7.0);
         color -= vec3(normal.z / 7.0);
-
-        if (floor(aPos.x) == floor(drop.x) && floor(aPos.z) == floor(drop.y)) {
-            color = vec3(1.0, 0.0, 0.0);
-        }
     }
 }

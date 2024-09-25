@@ -1,23 +1,15 @@
 #pragma once
-#define CHUNK_SIZE 256
 #include "glm/glm.hpp"
+#define CHUNK_SIZE 64
+#define CHUNK_CT 12
+#define MAP_SIZE CHUNK_SIZE * CHUNK_CT
 
 class Terrain {
 public:
 	Terrain(unsigned int _size);
 	void perlin(int xoff, int yoff);
-	void triangulate();
-	void triangle_normals();
-	void write_triangles(unsigned int* to);
-	void write_vertices(float* vertices);
-	void write_normals(float* normals);
 	unsigned int size;
-	class Triangle {
-	public:
-		float* a;
-		float* b;
-		float* c;
-	};
+	float*   heightmap;
 	class Drop {
 	public:
 		Drop();
@@ -34,8 +26,6 @@ public:
 		int       at();
 		int       old_at();
 	};
-	float*   heightmap;
-	Triangle* triangles;
 	float* vertex_at(unsigned int x, unsigned int y);
 	unsigned int tx(float* a);
 	unsigned int ty(float* a);

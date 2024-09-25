@@ -4,6 +4,7 @@
 #include <SDL_opengl.h>
 #include <stdint.h>
 #include "terrain.hpp"
+#include "chunk.hpp"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -115,9 +116,15 @@ float pitch =  0.0f;
 
 bool first_mouse = true;
 
+Chunk chunks[CHUNK_CT][CHUNK_CT];
+
+int ccx_old = -1;
+int ccy_old = -1;
+int ccz_old = -1;
+
 void resize() {
     glViewport(0, 0, width, height);
-	projection = glm::perspective(glm::radians(fov), (float)width/(float)height, 0.1f, 1000.0f);
+	projection = glm::perspective(glm::radians(fov), (float)width/(float)height, 0.1f, 100000.0f);
 }
 
 glm::vec3 face_normal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
@@ -128,53 +135,41 @@ glm::vec3 face_normal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
     return glm::normalize(glm::cross(a, b));
 }
 
-	#define TRIANGLE_CT (((CHUNK_SIZE - 1) * (CHUNK_SIZE - 1)) * 2)
+	#define TRIANGLE_CT ((CHUNK_SIZE - 1) * (CHUNK_SIZE - 1) * 2)
 	#define VERTEX_CT (CHUNK_SIZE * CHUNK_SIZE)
 
+void write_distance(int cam_chunk_x, int cam_chunk_y, int cam_chunk_z) {
+	ccx_old = cam_chunk_x;
+	ccy_old = cam_chunk_y;
+	ccz_old = cam_chunk_z;
+
+	for (int i = 0; i < CHUNK_CT; i ++) {
+		for (int j = 0; j < CHUNK_CT; j ++) {
+			float dist = sqrt(pow(i - cam_chunk_x, 2) + pow(j - cam_chunk_z, 2) + pow(cam_chunk_y, 2));
+			dist -= 2;
+			dist /= 3;
+			if (dist < 0) dist = 0;
+			if (dist > 4) dist = 4;
+			dist = pow(2, floor(dist));
+			if (chunks[i][j].scale != dist) {
+				chunks[i][j].gen(dist);
+			}
+		}
+	}
+}
+
 void write_terrain() {
-	terrain.triangulate();
-
-	float* normals;
-	normals = (float*)malloc(VERTEX_CT * sizeof(float) * 3);
-
-	float* vertices;
-	vertices = (float*)malloc(VERTEX_CT * sizeof(float) * 3);
-
-	unsigned int* indices;
-	indices = (unsigned int*)malloc(TRIANGLE_CT * 3 * sizeof(unsigned int));
-
-	terrain.write_triangles(indices);
-	terrain.write_vertices(vertices);
-	terrain.write_normals(normals);
-
- 	glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, VERTEX_CT * sizeof(float) * 3, vertices, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, TRIANGLE_CT * 3 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glGenBuffers(1, &nVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, nVBO);
-    glBufferData(GL_ARRAY_BUFFER, VERTEX_CT * sizeof(float) * 3, normals, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    glEnableVertexAttribArray(1);
+	for (int i = 0; i < CHUNK_CT; i ++) {
+		for (int j = 0; j < CHUNK_CT; j ++) {
+			chunks[i][j] = Chunk(i, j);
+		}
+	}
 }
 
 void init_opengl() {
 	glEnable(GL_DEPTH_TEST);
-
 	resize();
-
-	terrain.perlin(0, 0);
-
+	terrain.perlin(1, 3);
 	write_terrain();
 
 	char* vertex_shader_src = read_file("vertex.glsl");
@@ -242,8 +237,6 @@ void init_opengl() {
 	// if i have more, i'll have to unbind arrays
 }
 
-Terrain::Drop* drop;
-
 void input(unsigned int delta_ms) {
     SDL_PumpEvents();
 
@@ -292,15 +285,15 @@ void input(unsigned int delta_ms) {
 		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
     }
 
-	if (keystate[SDL_SCANCODE_LSHIFT]) {
-		for (int i = 0; i < 10000; i ++) {
-			Terrain::Drop _drop = Terrain::Drop();
-			for (int j = 0; j < 20; j ++) {
-				_drop.erode();
-			}
-		}
-		write_terrain();
-	}
+	//if (keystate[SDL_SCANCODE_LSHIFT]) {
+	//	for (int i = 0; i < 10000; i ++) {
+	//		Terrain::Drop drop = Terrain::Drop();
+	//		for (int j = 0; j < 20; j ++) {
+	//			drop.erode();
+	//		}
+	//	}
+	//	write_terrain();
+	//}
 
     int x, y;
     SDL_GetRelativeMouseState(&x, &y);
@@ -353,8 +346,6 @@ void render(unsigned int delta_ms) {
 		}
 	}
 
-	glUniform2f(glGetUniformLocation(program, "drop"), drop->pos.x, drop->pos.y);
-
 	view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(model));
@@ -362,7 +353,12 @@ void render(unsigned int delta_ms) {
 	glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	glUseProgram(program);
-	glDrawElements(GL_TRIANGLES, TRIANGLE_CT * 3, GL_UNSIGNED_INT, 0);
+	
+	for (int i = 0; i < CHUNK_CT; i ++) {
+		for (int j = 0; j < CHUNK_CT; j ++) {
+			chunks[i][j].render();
+		}
+	}
 }
 
 void swap() {
@@ -373,12 +369,32 @@ int main() {
 	init_sdl();
 	init_opengl();
 
-	drop = new Terrain::Drop();
+	for (int ct = 0; ct < 100; ct ++) {
+		for (int i = 0; i < 100000; i ++) {
+			Terrain::Drop drop = Terrain::Drop();
+			for (int j = 0; j < 20; j ++) {
+				drop.erode();
+			}
+		}
+
+		printf("%d%\n", ct);
+	}
+
+
+		write_terrain();
 
 	for (;;) {
 		unsigned int time = SDL_GetTicks();
 		unsigned int delta_ms = time - prior_ms;
 		prior_ms = time;
+
+		int cam_chunk_x = camera_pos.x / CHUNK_SIZE;
+		int cam_chunk_y = camera_pos.y / CHUNK_SIZE;
+		int cam_chunk_z = camera_pos.z / CHUNK_SIZE;
+
+		if (cam_chunk_x != ccx_old || cam_chunk_y != ccy_old || cam_chunk_z != ccz_old) {
+			write_distance(cam_chunk_x, cam_chunk_y, cam_chunk_z);
+		}
 
 		input(delta_ms);
         render(delta_ms);
