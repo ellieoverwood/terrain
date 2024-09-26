@@ -19,7 +19,7 @@
 #define CAMERA_SPEED 0.05f
 #define CAMERA_SPEED_SPRINT 0.3f
 
-#define FOV_WALK 80
+#define FOV_WALK 45
 #define FOV_SPRINT 140
 
 #define MOUSE_SENSITIVITY 0.1f
@@ -96,7 +96,7 @@ glm::mat4 model;
 glm::mat4 view;
 glm::mat4 projection;
 
-glm::vec3 camera_pos   = glm::vec3(0.0f, 50.0f,  3.0f);
+glm::vec3 camera_pos   = glm::vec3((CHUNK_SIZE * CHUNK_CT * WORLD_SCALE) / 2.0, 500.0f,  (CHUNK_SIZE * CHUNK_CT * WORLD_SCALE) / 2.0);
 glm::vec3 camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camera_up    = glm::vec3(0.0f, 1.0f,  0.0f);
 
@@ -116,7 +116,7 @@ float pitch =  0.0f;
 
 bool first_mouse = true;
 
-Chunk chunks[CHUNK_CT][CHUNK_CT];
+ChunkManager* chunk_manager;
 
 int ccx_old = -1;
 int ccy_old = -1;
@@ -138,39 +138,12 @@ glm::vec3 face_normal(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
 	#define TRIANGLE_CT ((CHUNK_SIZE - 1) * (CHUNK_SIZE - 1) * 2)
 	#define VERTEX_CT (CHUNK_SIZE * CHUNK_SIZE)
 
-void write_distance(int cam_chunk_x, int cam_chunk_y, int cam_chunk_z) {
-	ccx_old = cam_chunk_x;
-	ccy_old = cam_chunk_y;
-	ccz_old = cam_chunk_z;
-
-	for (int i = 0; i < CHUNK_CT; i ++) {
-		for (int j = 0; j < CHUNK_CT; j ++) {
-			float dist = sqrt(pow(i - cam_chunk_x, 2) + pow(j - cam_chunk_z, 2) + pow(cam_chunk_y, 2));
-			dist -= 2;
-			dist /= 3;
-			if (dist < 0) dist = 0;
-			if (dist > 4) dist = 4;
-			dist = pow(2, floor(dist));
-			if (chunks[i][j].scale != dist) {
-				chunks[i][j].gen(dist);
-			}
-		}
-	}
-}
-
-void write_terrain() {
-	for (int i = 0; i < CHUNK_CT; i ++) {
-		for (int j = 0; j < CHUNK_CT; j ++) {
-			chunks[i][j] = Chunk(i, j);
-		}
-	}
-}
-
 void init_opengl() {
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 	resize();
 	terrain.perlin(1, 3);
-	write_terrain();
 
 	char* vertex_shader_src = read_file("vertex.glsl");
 	unsigned int vertex_shader;
@@ -353,12 +326,7 @@ void render(unsigned int delta_ms) {
 	glUniformMatrix4fv(glGetUniformLocation(program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
 	glUseProgram(program);
-	
-	for (int i = 0; i < CHUNK_CT; i ++) {
-		for (int j = 0; j < CHUNK_CT; j ++) {
-			chunks[i][j].render();
-		}
-	}
+	chunk_manager->render();
 }
 
 void swap() {
@@ -370,9 +338,9 @@ int main() {
 	init_opengl();
 
 	for (int ct = 0; ct < 100; ct ++) {
-		for (int i = 0; i < 100000; i ++) {
+		for (int i = 0; i < 1600 * (CHUNK_CT * CHUNK_CT); i ++) {
 			Terrain::Drop drop = Terrain::Drop();
-			for (int j = 0; j < 20; j ++) {
+			for (int j = 0; j < 10; j ++) {
 				drop.erode();
 			}
 		}
@@ -380,21 +348,14 @@ int main() {
 		printf("%d%\n", ct);
 	}
 
-
-		write_terrain();
+	chunk_manager = new ChunkManager();
 
 	for (;;) {
 		unsigned int time = SDL_GetTicks();
 		unsigned int delta_ms = time - prior_ms;
 		prior_ms = time;
 
-		int cam_chunk_x = camera_pos.x / CHUNK_SIZE;
-		int cam_chunk_y = camera_pos.y / CHUNK_SIZE;
-		int cam_chunk_z = camera_pos.z / CHUNK_SIZE;
-
-		if (cam_chunk_x != ccx_old || cam_chunk_y != ccy_old || cam_chunk_z != ccz_old) {
-			write_distance(cam_chunk_x, cam_chunk_y, cam_chunk_z);
-		}
+		chunk_manager->update(camera_pos);
 
 		input(delta_ms);
         render(delta_ms);

@@ -40,6 +40,10 @@ void Terrain::perlin(int xoff, int yoff) {
 
 			heightmap[y*size+x] = val;
 		}
+
+		if (y % 100 == 0) {
+			printf("%d/%d [%f%]\n", y, size, ((float)y)/size*100);
+		}
 	}
 }
 
@@ -66,6 +70,9 @@ int Terrain::Drop::old_at() {
 Terrain::Drop::Drop() {
 	pos.x = (rand() / (float)RAND_MAX) * terrain.size;
 	pos.y = (rand() / (float)RAND_MAX) * terrain.size;
+	dir.x = (rand() / (float)RAND_MAX);
+	dir.y = (rand() / (float)RAND_MAX);
+	dir = glm::normalize(dir);
 	sediment = 0;
 	p_old.x = pos.x;
 	p_old.y = pos.y;
@@ -111,12 +118,12 @@ float flatness(glm::vec3 norm) {
 }
 
 #define INERTIA 0.2f
-#define MIN_SLOPE 0.01f
+#define MIN_SLOPE 0.0001f
 #define CAPACITY 2.0f
 #define DEPOSITION 0.8f
-#define EROSION 0.01f
-#define GRAVITY 0.5f
-#define EVAPORATION 0.1f
+#define EROSION 0.03f
+#define GRAVITY 1.0f
+#define EVAPORATION 0.2f
 void Terrain::Drop::erode() {
 	if (pos.x < 2 || pos.x > terrain.size - 2 || pos.y < 2 || pos.y > terrain.size - 2) return;
 

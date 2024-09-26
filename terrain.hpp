@@ -1,7 +1,7 @@
 #pragma once
 #include "glm/glm.hpp"
-#define CHUNK_SIZE 64
-#define CHUNK_CT 12
+#define CHUNK_SIZE 128
+#define CHUNK_CT 2
 #define MAP_SIZE CHUNK_SIZE * CHUNK_CT
 
 class Terrain {
