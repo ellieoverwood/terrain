@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <algorithm>
-
+#include "log.hpp"
 
 Terrain terrain = Terrain(MAP_SIZE);
 
@@ -21,6 +21,8 @@ float* Terrain::vertex_at(unsigned int x, unsigned int y) {
 }
 
 void Terrain::perlin(int xoff, int yoff) {
+	clog::start("noisemap generation");
+
 	for (int y = 0; y < size; y ++) {
 		for (int x = 0; x < size; x ++) {
 			float divisor = 400.0;
@@ -41,10 +43,10 @@ void Terrain::perlin(int xoff, int yoff) {
 			heightmap[y*size+x] = val;
 		}
 
-		if (y % 100 == 0) {
-			printf("%d/%d [%f%]\n", y, size, ((float)y)/size*100);
-		}
+		clog::progress(((float)y / (float)size) * 100);
 	}
+
+	clog::end();
 }
 
 unsigned int Terrain::tpos(float* a) {

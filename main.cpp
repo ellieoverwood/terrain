@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "terrain.hpp"
 #include "chunk.hpp"
+#include "log.hpp"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT 480
@@ -143,7 +144,6 @@ void init_opengl() {
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	resize();
-	terrain.perlin(1, 3);
 
 	char* vertex_shader_src = read_file("vertex.glsl");
 	unsigned int vertex_shader;
@@ -334,8 +334,9 @@ void swap() {
 }
 
 int main() {
-	init_sdl();
-	init_opengl();
+	terrain.perlin(1, 3);
+
+	clog::start("terrain erosion");
 
 	for (int ct = 0; ct < 100; ct ++) {
 		for (int i = 0; i < 1600 * (CHUNK_CT * CHUNK_CT); i ++) {
@@ -345,8 +346,13 @@ int main() {
 			}
 		}
 
-		printf("%d%\n", ct);
+		clog::progress(ct);
 	}
+
+	clog::end();
+
+	init_sdl();
+	init_opengl();
 
 	chunk_manager = new ChunkManager();
 

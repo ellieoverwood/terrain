@@ -44,8 +44,6 @@ void Chunk::gen(int _scale, unsigned int* _indices) {
 			if (height > max_height) max_height = height;
 		}
 	}
-
-	printf("max height: %f\n", max_height);
 }
 
 {
