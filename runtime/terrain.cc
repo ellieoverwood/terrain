@@ -1,13 +1,15 @@
 #include "terrain.h"
 #include "../shared/context.h"
+#include "../shared/debug.h"
 #include <stdlib.h>
 #include <SDL_opengl.h>
 #include <stdio.h>
 
-void TerrainRenderer::init(int _chunk_size, int _scale) {
+void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist) {
 	world_scale = _scale;
 	chunk_size = _chunk_size;
 	chunk_side_count = context.size / chunk_size;
+	occlusion_dist = _occlusion_dist * _chunk_size;
 
 	int side_length;
 	side_length = chunk_size / 1;
@@ -42,7 +44,8 @@ void TerrainRenderer::init(int _chunk_size, int _scale) {
 int TerrainRenderer::distance(int x1, int y1, int x2, int y2) {
 	float dist = sqrt(sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2)));
 	dist -= 1.0;
-	dist *= 1.5;
+	//dist *= 1.5;
+	dist *= occlusion_dist;
 	if (dist < 0) dist = 0;
 	if (dist > 4) dist = 4;
 	dist = pow(2, floor(dist));
@@ -90,6 +93,8 @@ void TerrainRenderer::update(glm::vec2 cam) {
 		old_x = closest->x;
 		old_z = closest->y;
 
+		int triangles = 0;
+
 		for (int y = 0; y < chunk_side_count; y ++) {
 			for (int x = 0; x < chunk_side_count; x ++) {
 				int dist = distance(closest->x + 0.5, closest->y + 0.5, x, y);
@@ -106,10 +111,15 @@ void TerrainRenderer::update(glm::vec2 cam) {
 					if (!first) {
 						chunk->erase();
 					}
-					chunk->gen(dist, indices_index);
+					int ct = 2 * (chunk_size / dist) * (chunk_size / dist);
+					chunk->gen(dist, indices_index, ct);
 				}
+
+				triangles += chunk->triangle_ct;
 			}
 		}
+
+		DEBUG_LOG("unculled total triangle count: %d", triangles);
 	}
 
 	if (first) first = false;
@@ -149,13 +159,13 @@ glm::vec3 TerrainRenderer::Chunk::world(int _x, int _y) {
 	return w;
 }
 
-void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices) {
+void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices, int _triangle_ct) {
 	indices = _indices;
 	scale = _scale;
 
 	int side_length = (size / scale) + 1;
 	int area = side_length * side_length;
-
+	triangle_ct = _triangle_ct;
 {
 	vertices = (float*)malloc(sizeof(float) * area * 3);
 	int count = 0;
@@ -216,7 +226,7 @@ void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices) {
 
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (side_length - 1) * (side_length - 1) * 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_ct * 3 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);

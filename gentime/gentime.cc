@@ -8,11 +8,17 @@
 #include <math.h>
 
 void gentime::exec() {
-	unsigned int size = 64 * 12;
+	unsigned int size = 64 * 32 + 1;
 	float* heightmap = (float*)malloc(sizeof(float) * size * size);
 	context = Context(heightmap, size);
 
-	DEBUG(debug::bar::start("perlin generation"));
+	for (int i = 0; i < size; i ++) {
+		for (int j = 0; j < size; j ++) {
+			context.heightmap[i*size+j] = 0;
+		}
+	}
+
+	/*DEBUG(debug::bar::start("perlin generation"));
 
 	for (int y = 0; y < size; y ++) {
 		DEBUG(debug::bar::step(((float)y / size) * 100.0));
@@ -36,9 +42,9 @@ void gentime::exec() {
 		}
 	}
 
-	DEBUG(debug::bar::end());
+	DEBUG(debug::bar::end());*/
 
-	erosion::simulate(
+	/*erosion::simulate(
 		0.2, // inertia,
 		0.0001, // min_slope,
 		2.0, // capacity,
@@ -48,5 +54,5 @@ void gentime::exec() {
 		0.2, // evaporation,
 		15, // max_steps,
 		30 // drops_per_vertex
-	);
+	);*/
 }

@@ -78,11 +78,11 @@ void runtime::init() {
 		glm::vec3(0.0, 1.0, 0.0),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		50, 3000,
-		45, 90,
+		75, 90,
 		0.1
 	);
 
-	terrain.init(64, 20);
+	terrain.init(32, 20, 0.05);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);

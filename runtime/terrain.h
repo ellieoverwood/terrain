@@ -4,18 +4,18 @@
 class TerrainRenderer {
 public:
 	TerrainRenderer() {};
-	void init(int chunk_size, int scale);
+	void init(int chunk_size, int scale, float occlusion_dist);
 	void update(glm::vec2 cam);
 	void render();
 	class Chunk {
 	public:
 		Chunk(int x, int y, int size, int world_scale);
-		void gen(int scale, unsigned int* indices);
+		void gen(int scale, unsigned int* indices, int triangle_ct);
 		void erase();
 		void render();
 		glm::vec3 world(int x, int y);
 		float at(int x, int y);
-		int x, y, scale;
+		int x, y, scale, triangle_ct;
 	private:
 		float* vertices;
 		float* normals;
@@ -43,4 +43,6 @@ private:
 
 	void gen_indices(int scale, unsigned int* to);
 	int distance(int x1, int y1, int x2, int y2);
+
+	float occlusion_dist;
 };
