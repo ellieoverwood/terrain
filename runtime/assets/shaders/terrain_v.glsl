@@ -8,7 +8,7 @@ uniform mat4 projection;
 
 out vec3 color;
 
-const float scale = 10.0;
+const float scale = 20.0;
 
 float angle_yaxis(vec3 norm) {
     vec3 up = vec3(0, 1, 0);

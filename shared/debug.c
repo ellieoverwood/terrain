@@ -1,5 +1,4 @@
-#include "log.hpp"
-#include <stdio.h>
+#include "debug.h"
 #include <SDL.h>
 
 #define RESET "\e[0m"
@@ -11,13 +10,17 @@ long last_tick;
 float last_percent;
 long total_time;
 
-void clog::start(char* _msg) {
+long debug::ticks() {
+	return SDL_GetTicks();
+}
+
+void debug::bar::start(char* _msg) {
 	msg = _msg;
 	last_percent = -1;
 	total_time = SDL_GetTicks();
 }
 
-void clog::progress(float percent) {
+void debug::bar::step(float percent) {
 	if ((int)percent == (int)last_percent) return;
 
 	long tick = SDL_GetTicks();
@@ -42,7 +45,7 @@ void clog::progress(float percent) {
 	last_percent = percent;
 }
 
-void clog::end() {
+void debug::bar::end() {
 	total_time = SDL_GetTicks() - total_time;
 	int seconds = ceil(total_time / 1000);
 	printf("\r[");

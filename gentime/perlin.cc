@@ -1,5 +1,5 @@
+#include "perlin.h"
 #include <math.h>
-#include "noise.hpp"
 
 typedef struct {
     float x;
@@ -40,7 +40,7 @@ float interpolate(float a0, float a1, float w) {
     return (a1 - a0) * (3.0 - w * 2.0) * w * w + a0;
 }
 
-float noise(float x, float y) {
+float perlin::at(float x, float y) {
     int x0 = (int)x; // all four corners of bounding box
     int y0 = (int)y;
     int x1 = x0 + 1;
