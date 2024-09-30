@@ -75,7 +75,7 @@ void runtime::init() {
 	platform::init(3, 3, "Engine", width, height, 300, 200);
 
 	cam.init(width, height,
-		glm::vec3(0.0, 1.0, 0.0),
+		glm::vec3(context.size * 10, 20.0, context.size * 10),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		50, 3000,
 		75, 90,

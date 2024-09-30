@@ -10,18 +10,19 @@ public:
 	class Chunk {
 	public:
 		Chunk(int x, int y, int size, int world_scale);
-		void gen(int scale, unsigned int* indices, int triangle_ct);
+		void gen(int scale, unsigned int* indices, int triangle_ct, bool custom_trianglemap);
 		void erase();
 		void render();
 		glm::vec3 world(int x, int y);
 		float at(int x, int y);
-		int x, y, scale, triangle_ct;
+		int x, y, scale, triangle_ct, id; // id is to tell if the chunk has meaningfully changed
 	private:
 		float* vertices;
 		float* normals;
 		unsigned int* indices;
 		unsigned int VBO, VAO, EBO, nVBO;
 		int size, world_scale;
+		bool custom_trianglemap;
 	};
 private:
 	Chunk*    chunk_at(int x, int y);
@@ -45,4 +46,6 @@ private:
 	int distance(int x1, int y1, int x2, int y2);
 
 	float occlusion_dist;
+	unsigned int* indices_buffer;
+	int* distmap;
 };

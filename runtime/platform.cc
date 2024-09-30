@@ -46,6 +46,7 @@ void input(double delta_time) {
     		case SDL_QUIT: terminate();
     		case SDL_KEYDOWN: {
     			if (event.key.repeat) break;
+			if (event.key.keysym.sym > 255) break;
 
     			void (*func)(double) = keypress[event.key.keysym.sym];
     			if (func) func(delta_time);
@@ -61,6 +62,7 @@ void input(double delta_time) {
     			break;
     		}
 	    	case SDL_KEYUP: {
+			if (event.key.keysym.sym > 255) break;
 	    		unsigned char key = event.key.keysym.sym;
 	    		for (int i = 0; i < (int)keys_down.size(); i ++) {
 	    			if (key == keys_down[i]) {

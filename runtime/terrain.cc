@@ -4,12 +4,16 @@
 #include <stdlib.h>
 #include <SDL_opengl.h>
 #include <stdio.h>
+#include <string.h>
 
 void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist) {
 	world_scale = _scale;
 	chunk_size = _chunk_size;
 	chunk_side_count = context.size / chunk_size;
 	occlusion_dist = _occlusion_dist * _chunk_size;
+
+	indices_buffer = (unsigned int*)malloc(sizeof(unsigned int) * 6 * chunk_size * chunk_size);
+	distmap = (int*)malloc(sizeof(int) * chunk_side_count * chunk_side_count);
 
 	int side_length;
 	side_length = chunk_size / 1;
@@ -48,7 +52,8 @@ int TerrainRenderer::distance(int x1, int y1, int x2, int y2) {
 	dist *= occlusion_dist;
 	if (dist < 0) dist = 0;
 	if (dist > 4) dist = 4;
-	dist = pow(2, floor(dist));
+	dist = floor(dist);
+	//dist = pow(2, floor(dist));
 	return dist;
 }
 
@@ -86,6 +91,67 @@ TerrainRenderer::Chunk* TerrainRenderer::world_to_chunk(glm::vec2 p) {
 	return &chunks[(int)p.y * chunk_side_count + (int)p.x];
 }
 
+int gen_triangle_map_with_edges(unsigned int* indices, int chunk_size, int scale, bool l, bool r, bool u, bool d) {
+	#define TRIANGLE_I(_x1, _y1, _x2, _y2, _x3, _y3) {indices[count++] = TRI_AT(_x1, _y1); indices[count++] = TRI_AT(_x2, _y2); indices[count++] = TRI_AT(_x3, _y3);}
+#define TRIANGLE_I_REV(_x1, _y1, _x2, _y2, _x3, _y3) TRIANGLE_I(_x3, _y3, _x2, _y2, _x1, _y1)
+
+	int count = 0;
+	int side_length = chunk_size / scale + 1; // more aptly vertex count
+	for (int y = 0; y < side_length - 1; y ++) {
+		for (int x = 0; x < side_length - 1; x ++) {
+			if (l && x == 0) continue;
+			if (r && x == side_length - 2) continue;
+			if (u && y == 0) continue;
+			if (d && y == side_length - 2) continue; // not on any relavent edges
+			
+			TRIANGLE_I(x, y, x+1, y+1, x+1, y);
+			TRIANGLE_I(x, y, x, y+1, x+1, y+1);
+		}
+	}
+
+	if (u) {
+		int y = 0; // above (y=0) is the wide part
+		
+		for (int x = 0; x < side_length - 1; x += 2) {
+			if (!l || x != 0)               TRIANGLE_I(x, y, x, y+1, x+1, y+1);
+			                                TRIANGLE_I(x, y, x+1, y+1, x+2, y);
+			if (!r || x != side_length - 3) TRIANGLE_I(x+2, y+1, x+2, y, x+1, y+1);
+		}
+	}
+
+	if (d) {
+		int y = side_length - 1;
+		
+		for (int x = 0; x < side_length - 1; x += 2) {
+			if (!l || x != 0)               TRIANGLE_I_REV(x, y, x, y-1, x+1, y-1);
+			                                TRIANGLE_I_REV(x, y, x+1, y-1, x+2, y);
+			if (!r || x != side_length - 3) TRIANGLE_I_REV(x+2, y-1, x+2, y, x+1, y-1);
+		}
+	}
+
+	if (l) {
+		int x = 0;
+		
+		for (int y = 0; y < side_length - 1; y += 2) {
+			if (!u || y != 0)               TRIANGLE_I_REV(x, y, x+1, y, x+1, y+1);
+			                                TRIANGLE_I_REV(x, y, x+1, y+1, x, y+2);
+			if (!d || y != side_length - 3) TRIANGLE_I_REV(x+1, y+2, x, y+2, x+1, y+1);
+		}
+	}
+
+	if (r) {
+		int x = side_length - 1;
+		
+		for (int y = 0; y < side_length - 1; y += 2) {
+			if (!u || y != 0)               TRIANGLE_I(x, y, x-1, y, x-1, y+1);
+			                                TRIANGLE_I(x, y, x-1, y+1, x, y+2);
+			if (!d || y != side_length - 3) TRIANGLE_I(x-1, y+2, x, y+2, x-1, y+1);
+		}
+	}
+
+	return count;
+}
+
 void TerrainRenderer::update(glm::vec2 cam) {
 	Chunk* closest = world_to_chunk(cam);
 
@@ -97,9 +163,38 @@ void TerrainRenderer::update(glm::vec2 cam) {
 
 		for (int y = 0; y < chunk_side_count; y ++) {
 			for (int x = 0; x < chunk_side_count; x ++) {
-				int dist = distance(closest->x + 0.5, closest->y + 0.5, x, y);
+				distmap[y * chunk_side_count + x] = distance(closest->x + 0.5, closest->y + 0.5, x, y);
+			}
+		}
+
+		for (int y = 0; y < chunk_side_count; y ++) {
+			for (int x = 0; x < chunk_side_count; x ++) {
+				#define DIST_AT(_x, _y) distmap[(_y) * chunk_side_count + (_x)]
+				int dist = DIST_AT(x, y);
+
+				int l_dist = (x > 0)                      ? (DIST_AT(x-1, y) - dist) : 0;
+				int r_dist = (x < (chunk_side_count - 1)) ? (DIST_AT(x+1, y) - dist) : 0;
+				int u_dist = (y > 0)                      ? (DIST_AT(x, y-1) - dist) : 0;
+				int d_dist = (y < (chunk_side_count - 1)) ? (DIST_AT(x, y+1) - dist) : 0;
+
+				if (l_dist < 0) l_dist = 0;
+				if (r_dist < 0) r_dist = 0;
+				if (u_dist < 0) u_dist = 0;
+				if (d_dist < 0) d_dist = 0;
+
+				int new_id = l_dist + 2 * r_dist + 4 * u_dist + 8 * d_dist + 16 * dist; //hash
 				Chunk* chunk = &chunks[y*chunk_side_count+x];
-				if (chunk->scale != dist) {
+
+				if (!first && new_id == chunk->id) {
+					triangles += chunk->triangle_ct;
+					continue;
+				}
+
+				dist = pow(2, dist);
+
+				int num_edges = l_dist + r_dist + u_dist + d_dist;
+
+				if (!num_edges) {
 					unsigned int* indices_index;
 					switch (dist) {
 						case 1: indices_index = indices1; break;
@@ -108,13 +203,30 @@ void TerrainRenderer::update(glm::vec2 cam) {
 						case 8: indices_index = indices8; break;
 						case 16: indices_index = indices16; break;
 					}
-					if (!first) {
-						chunk->erase();
-					}
+					if (!first) chunk->erase();
+					
 					int ct = 2 * (chunk_size / dist) * (chunk_size / dist);
-					chunk->gen(dist, indices_index, ct);
+					chunk->gen(dist, indices_index, ct, false);
+				} else {
+					int indices_len = gen_triangle_map_with_edges(
+							indices_buffer, 
+							chunk_size, 
+							dist, 
+							l_dist, 
+							r_dist,	
+							u_dist,
+							d_dist
+					);
+
+					unsigned int* indices_final = (unsigned int*)malloc(sizeof(unsigned int) * indices_len);
+					memcpy(indices_final, indices_buffer, indices_len * sizeof(unsigned int));
+
+					if (!first) chunk->erase();
+					chunk->gen(dist, indices_final, indices_len / 3, true);
+		
 				}
 
+				chunk->id = new_id;
 				triangles += chunk->triangle_ct;
 			}
 		}
@@ -122,7 +234,7 @@ void TerrainRenderer::update(glm::vec2 cam) {
 		DEBUG_LOG("unculled total triangle count: %d", triangles);
 	}
 
-	if (first) first = false;
+	first = false;
 }
 
 void TerrainRenderer::render() {
@@ -159,13 +271,14 @@ glm::vec3 TerrainRenderer::Chunk::world(int _x, int _y) {
 	return w;
 }
 
-void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices, int _triangle_ct) {
+void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices, int _triangle_ct, bool _custom_trianglemap) {
 	indices = _indices;
 	scale = _scale;
 
 	int side_length = (size / scale) + 1;
 	int area = side_length * side_length;
 	triangle_ct = _triangle_ct;
+	custom_trianglemap = _custom_trianglemap;
 {
 	vertices = (float*)malloc(sizeof(float) * area * 3);
 	int count = 0;
@@ -217,7 +330,7 @@ void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices, int _triang
 
 	//printf("%d %d %d\n", indices[0], indices[1], indices[2]);
 
-	glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
     glGenBuffers(1, &VBO);
@@ -242,6 +355,7 @@ void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices, int _triang
 void TerrainRenderer::Chunk::erase() {
 	free(vertices);
 	free(normals);
+	if (custom_trianglemap) free(indices);
 
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
@@ -250,6 +364,6 @@ void TerrainRenderer::Chunk::erase() {
 }
 
 void TerrainRenderer::Chunk::render() {
-    glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, (size/scale) * (size/scale) * 6, GL_UNSIGNED_INT, 0);
+    	glBindVertexArray(VAO);
+	glDrawElements(GL_TRIANGLES, triangle_ct * 3, GL_UNSIGNED_INT, 0);
 }

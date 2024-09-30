@@ -42,9 +42,9 @@ void gentime::exec() {
 		}
 	}
 
-	DEBUG(debug::bar::end());*/
+	DEBUG(debug::bar::end());
 
-	/*erosion::simulate(
+	erosion::simulate(
 		0.2, // inertia,
 		0.0001, // min_slope,
 		2.0, // capacity,
