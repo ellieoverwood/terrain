@@ -9,6 +9,7 @@
 #include "../include/glm/gtc/matrix_transform.hpp"
 #include "../include/glm/gtc/type_ptr.hpp"
 #include "terrain.h"
+#include "water.h"
 
 int width = 600;
 int height = 400;
@@ -18,6 +19,7 @@ Program simple_p;
 
 FloatingCamera cam;
 TerrainRenderer terrain;
+Water water;
 
 bool wireframe = false;
 
@@ -84,6 +86,8 @@ void runtime::init() {
 
 	terrain.init(32, 20, 0.05);
 
+	water.init(20);
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -104,11 +108,24 @@ void runtime::render(double delta_time) {
 	glm::mat4 view = cam.view();
 	glm::mat4 proj = cam.proj(width, height, delta_time);
 
+
+
+	water.program.use();
+
+	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "view"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
+
+	water.render();
+
+
+
+	terrain_p.use();
+
 	glUniformMatrix4fv(glGetUniformLocation(terrain_p.id, "model"), 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(glGetUniformLocation(terrain_p.id, "view"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(glGetUniformLocation(terrain_p.id, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
 
-	terrain_p.use();
 	terrain.render();
 }
 

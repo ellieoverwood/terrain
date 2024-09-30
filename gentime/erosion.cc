@@ -40,8 +40,9 @@ public:
 	float     water;
 	float     sediment;
 	glm::vec3 p_old;
-	void erode() {
-		if (pos.x < 2 || pos.x > context.size - 2 || pos.y < 2 || pos.y > context.size - 2) return;
+	bool erode() {
+		if (pos.x < 2 || pos.x > context.size - 2 || pos.y < 2 || pos.y > context.size - 2) return true;
+		if (context.heightmap[at()] <= 0) return true;
 
 		p_old.x = pos.x;
 		p_old.y = pos.y;
@@ -49,7 +50,7 @@ public:
 		glm::vec3 norm = normal(pos.x, pos.y);
 		glm::vec3 grad;
 
-		if (norm.x == 0 || norm.y == 0) return;
+		if (norm.x == 0 || norm.y == 0) return true;
 
 		grad.x = norm.x * norm.z;
 		grad.y = norm.y * norm.z;
@@ -83,6 +84,8 @@ public:
 
 		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));
 		water *= (1 - evaporation);
+		
+		return false;
 
 		// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf
 	}
@@ -146,7 +149,7 @@ void erosion::simulate(
 		for (int i = 0; i < (int)(drops_per_vertex * context.area * (1 / 100.0)); i ++) {
 			Drop drop = Drop();
 			for (int j = 0; j < max_steps; j ++) {
-				drop.erode();
+				if (drop.erode()) break;
 			}
 		}
 

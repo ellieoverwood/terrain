@@ -18,11 +18,8 @@ float angle_yaxis(vec3 norm) {
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(aPos, 1.0f);
+    	gl_Position = projection * view * model * vec4(aPos, 1.0f);
 
-    if (aPos.y == 0.0) {
-        color = vec3(0.03, 0.27, 0.51);
-    } else {
         color = vec3(0.40, 0.28, 0.35);
         color = mix(color, vec3(0.25, 0.61, 0.04), clamp(angle_yaxis(normal) * 2, 0.0, 1.0));
         if (aPos.y > 40 * scale) {
@@ -31,9 +28,8 @@ void main()
         }
         if (aPos.y < 2 * scale) {
             vec3 yellow = mix(color, vec3(0.796, 0.741, 0.576), clamp(angle_yaxis(normal) * 7, 0.0, 1.0));
-            color = mix(color, yellow, (2 * scale - aPos.y) / (2 * scale));
+            color = mix(color, yellow, clamp((2 * scale - aPos.y) / (2 * scale), 0.0, 1.0));
         }
         color += vec3(normal.x / 8.0);
         color -= vec3(normal.z / 8.0);
-    }
 }

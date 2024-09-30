@@ -19,24 +19,35 @@ void gentime::exec() {
 	}
 
 	DEBUG(debug::bar::start("perlin generation"));
+	int center = size / 2;
+
+	double farthest_possible_distance = sqrt(pow(size - center, 2));
 
 	for (int y = 0; y < size; y ++) {
 		DEBUG(debug::bar::step(((float)y / size) * 100.0));
 		for (int x = 0; x < size; x ++) {
-			float divisor = 400.0;
-			float influence = 3.0;
-			float val = 0.0;
+			float distance = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
+			float island = ((perlin::at(x / 300.0, y / 300.0) + 1) * distance * 10);
+			if (island < 0) island = 0;
 
-			for (int i = 0; i < 16; i ++) {
-				val += perlin::at(x / divisor, y / divisor) * influence;
+			float mountains = 0;
+			float divisor = 400.0;
+			float influence = 10.0;
+
+			for (int i = 0; i < 8; i ++) {
+				mountains += (perlin::at(x / divisor, y / divisor)) * influence;
 				divisor /= 2;
 				influence /= 2;
 			}
 
-			val += 0.8;
-			if (val < 0) val = 0;
-			val = pow(val, 1.8);
-			val *= 32;
+			float val = mountains + island;
+			val -= 3;
+
+			float steepness = ((perlin::at(x / 400.0, y / 400.0) + 1)) - 0.5;
+			//if (steepness > 1) steepness = 1;
+			val *= steepness;
+
+			val *= 16;
 
 			context.heightmap[y*size+x] = val;
 		}
@@ -44,7 +55,7 @@ void gentime::exec() {
 
 	DEBUG(debug::bar::end());
 
-	erosion::simulate(
+	/*erosion::simulate(
 		0.2, // inertia,
 		0.0001, // min_slope,
 		2.0, // capacity,
@@ -54,5 +65,13 @@ void gentime::exec() {
 		0.2, // evaporation,
 		15, // max_steps,
 		30 // drops_per_vertex
-	);
+	);*/
+
+	for (int y = 0; y < size; y ++) {
+		for (int x = 0; x < size; x ++) {
+			float* at = &context.heightmap[y * size + x];
+			if (*at <= 0) *at -= 2;
+			*at -= 1;
+		}
+	}
 }
