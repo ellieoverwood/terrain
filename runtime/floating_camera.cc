@@ -29,7 +29,7 @@ void FloatingCamera::init(int width, int height, glm::vec3 _position, glm::vec3 
 
 void FloatingCamera::resize(int width, int height) {
 	glViewport(0, 0, width, height);
-	projection = glm::perspective(glm::radians(fov), (float)width/(float)height, 0.1f, 100000.0f);
+	projection = glm::perspective(glm::radians(fov), (float)width/(float)height, 3.0f, 100000.0f);
 }
 
 void FloatingCamera::toggle_run() {
