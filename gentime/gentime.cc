@@ -18,7 +18,7 @@ void gentime::exec() {
 		}
 	}
 
-	/*DEBUG(debug::bar::start("perlin generation"));
+	DEBUG(debug::bar::start("perlin generation"));
 
 	for (int y = 0; y < size; y ++) {
 		DEBUG(debug::bar::step(((float)y / size) * 100.0));
@@ -54,5 +54,5 @@ void gentime::exec() {
 		0.2, // evaporation,
 		15, // max_steps,
 		30 // drops_per_vertex
-	);*/
+	);
 }
