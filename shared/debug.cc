@@ -14,6 +14,10 @@ long debug::ticks() {
 	return SDL_GetTicks();
 }
 
+void debug::header(char* file, int line, int color, char* text) {
+	printf("\e[1;%dm[%s]\e[0;1m(%ld) %s:%d| \e[0m", color, text, debug::ticks(), file, line);
+}
+
 void debug::bar::start(char* _msg) {
 	msg = _msg;
 	last_percent = -1;

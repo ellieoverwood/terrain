@@ -1,5 +1,5 @@
 #pragma once
 
 namespace gentime {
-	void exec();
+	void exec(int size);
 }

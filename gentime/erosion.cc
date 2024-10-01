@@ -143,7 +143,7 @@ void erosion::simulate(
 	gravity = _gravity;
 	evaporation = _evaporation;
 
-	DEBUG(debug::bar::start("terrain erosion"));
+	debug::bar::start("terrain erosion");
 
 	for (int ct = 0; ct < 100; ct ++) {
 		for (int i = 0; i < (int)(drops_per_vertex * context.area * (1 / 100.0)); i ++) {
@@ -153,8 +153,8 @@ void erosion::simulate(
 			}
 		}
 
-		DEBUG(debug::bar::step(ct));
+		debug::bar::step(ct);
 	}
 
-	DEBUG(debug::bar::end());
+	debug::bar::end();
 }

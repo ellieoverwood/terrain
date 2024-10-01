@@ -1,12 +1,16 @@
 #include "runtime.h"
 #include "runtime_manager.h"
 #include "platform.h"
+#include "../shared/context.h"
 
 using namespace runtime;
 long last_time;
 
-void runtime::exec() {
-	init();
+void runtime::exec(int size, int chunk) {
+	context.size = size + 1;
+	context.area = context.size * context.size;
+
+	init(chunk);
 
 	last_time = platform::ticks() / 1000.0;
 

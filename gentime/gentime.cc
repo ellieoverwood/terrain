@@ -7,8 +7,8 @@
 #include "erosion.h"
 #include <math.h>
 
-void gentime::exec() {
-	unsigned int size = 64 * 32 + 1;
+void gentime::exec(int size) {
+	size ++;
 	float* heightmap = (float*)malloc(sizeof(float) * size * size);
 	context = Context(heightmap, size);
 
@@ -18,13 +18,13 @@ void gentime::exec() {
 		}
 	}
 
-	DEBUG(debug::bar::start("perlin generation"));
+	debug::bar::start("perlin generation");
 	int center = size / 2;
 
 	double farthest_possible_distance = sqrt(pow(size - center, 2));
 
 	for (int y = 0; y < size; y ++) {
-		DEBUG(debug::bar::step(((float)y / size) * 100.0));
+		debug::bar::step(((float)y / size) * 100.0);
 		for (int x = 0; x < size; x ++) {
 			float distance = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
 			float island = ((perlin::at(x / 300.0, y / 300.0) + 1) * distance * 10);
@@ -53,9 +53,9 @@ void gentime::exec() {
 		}
 	}
 
-	DEBUG(debug::bar::end());
+	debug::bar::end();
 
-	/*erosion::simulate(
+	erosion::simulate(
 		0.2, // inertia,
 		0.0001, // min_slope,
 		2.0, // capacity,
@@ -65,7 +65,7 @@ void gentime::exec() {
 		0.2, // evaporation,
 		15, // max_steps,
 		30 // drops_per_vertex
-	);*/
+	);
 
 	for (int y = 0; y < size; y ++) {
 		for (int x = 0; x < size; x ++) {

@@ -1,7 +1,7 @@
 #pragma once
 
 namespace runtime {
-	void init();
+	void init(int chunk);
 	void update(double delta_time);
 	void render(double delta_time);
 	void terminate();

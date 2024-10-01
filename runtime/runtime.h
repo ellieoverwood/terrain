@@ -1,5 +1,5 @@
 #pragma once
 
 namespace runtime {
-	void exec();
+	void exec(int size, int chunk);
 }

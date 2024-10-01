@@ -66,7 +66,7 @@ void on_v(double delta_time) {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 }
 
-void runtime::init() {
+void runtime::init(int chunk) {
 	platform::on_keypress(platform::keycode::ESC, &on_esc);
 	platform::on_keydown('w',  &on_w);
 	platform::on_keydown('a',  &on_a);
@@ -84,7 +84,7 @@ void runtime::init() {
 		0.1
 	);
 
-	terrain.init(32, 20, 0.05);
+	terrain.init(chunk, 20, 0.05);
 
 	water.init(20);
 
