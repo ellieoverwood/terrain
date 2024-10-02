@@ -6,7 +6,12 @@
 #include <stdio.h>
 #include <vector>
 
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_opengl3.h"
+
 #include "../shared/debug.h"
+#include "dev.h"
 
 SDL_Window* window;
 SDL_GLContext sdl_context;
@@ -31,11 +36,22 @@ void on_keydown(unsigned char key, void (*func) (double)) {
 }\
 
 void terminate() {
-    SDL_GL_DeleteContext(sdl_context);
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
+
+    	SDL_GL_DeleteContext(sdl_context);
 	SDL_DestroyWindow(window);
 	window = NULL;
 	SDL_Quit();
 	exit(0);
+}
+
+bool dev_menu = false;
+
+void toggle_menu(double delta_time) {
+	dev_menu = !dev_menu;
+	SDL_SetRelativeMouseMode(dev_menu ? SDL_FALSE : SDL_TRUE);
 }
 
 void input(double delta_time) {
@@ -81,6 +97,8 @@ void input(double delta_time) {
     			break;
     		}
     	}
+
+	ImGui_ImplSDL2_ProcessEvent(&event); // Forward your event to backend
     }
 
     for (unsigned char c : keys_down) {
@@ -89,10 +107,21 @@ void input(double delta_time) {
 
     int x, y;
     SDL_GetRelativeMouseState(&x, &y);
-    if (x || y) runtime::on_mouse(x, y, delta_time);
+    if ((x || y) && !dev_menu) runtime::on_mouse(x, y, delta_time);
+
+	// (Where your code calls SDL_PollEvent())
+
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
+	if (dev_menu) dev::update(); // Show demo window! :)
 }
 
+
+
 void init(int opengl_version_major, int opengl_version_minor, const char* window_title, int window_width, int window_height, int window_min_width, int window_min_height) {
+	on_keypress('\r', toggle_menu);
+
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) SDL_ERR("failed to intialize video")
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, opengl_version_major);
@@ -109,6 +138,16 @@ void init(int opengl_version_major, int opengl_version_minor, const char* window
 	if (SDL_GL_SetSwapInterval(1) < 0) SDL_ERR("failed to set vsync")
 	//SDL_ShowCursor(SDL_FALSE);
 	SDL_SetRelativeMouseMode(SDL_TRUE);
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplSDL2_InitForOpenGL(window, sdl_context);
+	ImGui_ImplOpenGL3_Init();
 }
 
 long ticks() {
@@ -140,6 +179,9 @@ char* read_file(char* src) {
 }
 
 void swap_buffers() {
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 	SDL_GL_SwapWindow(window);
 }
 }

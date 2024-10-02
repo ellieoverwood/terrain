@@ -22,8 +22,6 @@ FloatingCamera cam;
 TerrainRenderer terrain;
 Water water;
 
-bool wireframe = false;
-
 void on_esc(double delta_time) {
 	runtime::terminate();
 }
@@ -62,18 +60,12 @@ void runtime::on_mouse(int x, int y, double delta_time) {
 	cam.turn(x, y);
 }
 
-void on_v(double delta_time) {
-	wireframe = !wireframe;
-	glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-}
-
 void runtime::init(int chunk) {
 	platform::on_keydown('w',  &on_w);
 	platform::on_keydown('a',  &on_a);
 	platform::on_keydown('s',  &on_s);
 	platform::on_keydown('d',  &on_d);
 
-	platform::on_keypress('v',  &on_v);
 	platform::on_keypress('\t', &on_tab);
 	platform::on_keypress(platform::keycode::ESC, &on_esc);
 
