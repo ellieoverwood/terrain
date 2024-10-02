@@ -10,6 +10,7 @@
 #include "../include/glm/gtc/type_ptr.hpp"
 #include "terrain.h"
 #include "water.h"
+#include "../shared/debug.h"
 
 int width = 600;
 int height = 400;
@@ -63,17 +64,19 @@ void runtime::on_mouse(int x, int y, double delta_time) {
 
 void on_v(double delta_time) {
 	wireframe = !wireframe;
-    glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
 }
 
 void runtime::init(int chunk) {
-	platform::on_keypress(platform::keycode::ESC, &on_esc);
 	platform::on_keydown('w',  &on_w);
 	platform::on_keydown('a',  &on_a);
 	platform::on_keydown('s',  &on_s);
 	platform::on_keydown('d',  &on_d);
+
 	platform::on_keypress('v',  &on_v);
 	platform::on_keypress('\t', &on_tab);
+	platform::on_keypress(platform::keycode::ESC, &on_esc);
+
 	platform::init(3, 3, "Engine", width, height, 300, 200);
 
 	cam.init(width, height,
@@ -84,13 +87,16 @@ void runtime::init(int chunk) {
 		0.1
 	);
 
-	terrain.init(chunk, 20, 0.05);
+	terrain.init(chunk, 20, 0.03);
 
 	water.init(20);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+
+    	glEnable(GL_BLEND);
+    	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	terrain_p = Program("terrain_v.glsl", "terrain_f.glsl");
 	simple_p  = Program("simple_v.glsl", "simple_f.glsl");
@@ -101,6 +107,8 @@ void runtime::update(double delta_time) {
 }
 
 void runtime::render(double delta_time) {
+	// GENERAL
+
 	glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -109,16 +117,7 @@ void runtime::render(double delta_time) {
 	glm::mat4 proj = cam.proj(width, height, delta_time);
 
 
-
-	water.program.use();
-
-	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "view"), 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
-
-	water.render();
-
-
+	// TERRAIN
 
 	terrain_p.use();
 
@@ -127,6 +126,16 @@ void runtime::render(double delta_time) {
 	glUniformMatrix4fv(glGetUniformLocation(terrain_p.id, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
 
 	terrain.render();
+
+	// WATER
+
+	water.program.use();
+
+	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "view"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
+
+	water.render();
 }
 
 void runtime::terminate() {

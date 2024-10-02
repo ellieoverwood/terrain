@@ -15,7 +15,7 @@ long debug::ticks() {
 }
 
 void debug::header(char* file, int line, int color, char* text) {
-	printf("\e[1;%dm[%s]\e[0;1m(%ld) %s:%d| \e[0m", color, text, debug::ticks(), file, line);
+	fprintf(stderr, "\e[1;%dm[%s]\e[0;1m(%ld) %s:%d| \e[0m", color, text, debug::ticks(), file, line);
 }
 
 void debug::bar::start(char* _msg) {
@@ -36,13 +36,13 @@ void debug::bar::step(float percent) {
 		seconds = ceil(est_time * (1.0 - (percent / 100)));
 	}
 
-	printf("\r[%d%|", (int)percent);
+	fprintf(stderr, "\r[%d%|", (int)percent);
 	if (seconds >= 60) {
-		printf("%dm%ds", seconds/60, seconds%60);
+		fprintf(stderr, "%dm%ds", seconds/60, seconds%60);
 	} else {
-		printf("%ds", seconds);
+		fprintf(stderr, "%ds", seconds);
 	}
-	printf("] " BBLU "%s      " RESET, msg);
+	fprintf(stderr, "] " BBLU "%s      " RESET, msg);
 	fflush(stdout);
 
 	last_tick = tick;
@@ -52,11 +52,11 @@ void debug::bar::step(float percent) {
 void debug::bar::end() {
 	total_time = SDL_GetTicks() - total_time;
 	int seconds = ceil(total_time / 1000);
-	printf("\r[");
+	fprintf(stderr, "\r[");
 	if (seconds >= 60) {
-		printf("%dm%ds", seconds/60, seconds%60);
+		fprintf(stderr, "%dm%ds", seconds/60, seconds%60);
 	} else {
-		printf("%ds", seconds);
+		fprintf(stderr, "%ds", seconds);
 	}
-	printf("] " BGRN "%s" RESET "      \n", msg);
+	fprintf(stderr, "] " BGRN "%s" RESET "      \n", msg);
 }

@@ -2,19 +2,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../shared/debug.h"
-#include "../shared/context.h"
 #include "perlin.h"
 #include "erosion.h"
 #include <math.h>
 
-void gentime::exec(int size) {
-	size ++;
+float* gentime::exec(int size) {
 	float* heightmap = (float*)malloc(sizeof(float) * size * size);
-	context = Context(heightmap, size);
 
 	for (int i = 0; i < size; i ++) {
 		for (int j = 0; j < size; j ++) {
-			context.heightmap[i*size+j] = 0;
+			heightmap[i*size+j] = 0;
 		}
 	}
 
@@ -27,7 +24,7 @@ void gentime::exec(int size) {
 		debug::bar::step(((float)y / size) * 100.0);
 		for (int x = 0; x < size; x ++) {
 			float distance = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
-			float island = ((perlin::at(x / 300.0, y / 300.0) + 1) * distance * 10);
+			float island = ((perlin::at(x / 500.0, y / 500.0) + 1) * distance * 10);
 			if (island < 0) island = 0;
 
 			float mountains = 0;
@@ -43,13 +40,13 @@ void gentime::exec(int size) {
 			float val = mountains + island;
 			val -= 3;
 
-			float steepness = ((perlin::at(x / 400.0, y / 400.0) + 1)) - 0.5;
+			float steepness = ((perlin::at(x / 700.0, y / 700.0) + 1)) - 0.5;
 			//if (steepness > 1) steepness = 1;
 			val *= steepness;
 
 			val *= 16;
 
-			context.heightmap[y*size+x] = val;
+			heightmap[y*size+x] = val;
 		}
 	}
 
@@ -64,14 +61,10 @@ void gentime::exec(int size) {
 		1.0, // gravity,
 		0.2, // evaporation,
 		15, // max_steps,
-		30 // drops_per_vertex
+		40, // drops_per_vertex
+		heightmap,
+		size
 	);
 
-	for (int y = 0; y < size; y ++) {
-		for (int x = 0; x < size; x ++) {
-			float* at = &context.heightmap[y * size + x];
-			if (*at <= 0) *at -= 2;
-			*at -= 1;
-		}
-	}
+	return heightmap;
 }

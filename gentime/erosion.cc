@@ -1,5 +1,4 @@
 #include "erosion.h"
-#include "../shared/context.h"
 #include "../shared/debug.h"
 #include "../include/glm/glm.hpp"
 
@@ -11,8 +10,12 @@ float erosion_const;
 float gravity;
 float evaporation;
 
+float* heightmap;
+int size;
+int area;
+
 float* vertex_at(int x, int y) {
-	return &context.heightmap[y * context.size + x];
+	return &heightmap[y * size + x];
 }
 
 float flatness(glm::vec3 norm) {
@@ -23,8 +26,8 @@ float flatness(glm::vec3 norm) {
 class Drop {
 public:
 	Drop() {
-		pos.x = (rand() / (float)RAND_MAX) * context.size;
-		pos.y = (rand() / (float)RAND_MAX) * context.size;
+		pos.x = (rand() / (float)RAND_MAX) * size;
+		pos.y = (rand() / (float)RAND_MAX) * size;
 		dir.x = (rand() / (float)RAND_MAX);
 		dir.y = (rand() / (float)RAND_MAX);
 		dir = glm::normalize(dir);
@@ -41,8 +44,8 @@ public:
 	float     sediment;
 	glm::vec3 p_old;
 	bool erode() {
-		if (pos.x < 2 || pos.x > context.size - 2 || pos.y < 2 || pos.y > context.size - 2) return true;
-		if (context.heightmap[at()] <= 0) return true;
+		if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
+		if (heightmap[at()] <= 0) return true;
 
 		p_old.x = pos.x;
 		p_old.y = pos.y;
@@ -62,23 +65,23 @@ public:
 
 		pos += dir;
 
-		float h = context.heightmap[at()];
-		float h_diff = h - context.heightmap[old_at()];
+		float h = heightmap[at()];
+		float h_diff = h - heightmap[old_at()];
 
 		if (h_diff > 0) {
 			float drop = std::min(h_diff, sediment);
-			context.heightmap[old_at()] += drop;
+			heightmap[old_at()] += drop;
 			sediment -= drop;
 		} else {
 			float c = std::max(h_diff*-1, min_slope) * vel * water * capacity;
 			if (sediment > c) {
 				float drop = (sediment - c) * deposition;
 				sediment -= drop;
-				context.heightmap[old_at()] += drop;
+				heightmap[old_at()] += drop;
 			} else {
 				float take = std::min((c-sediment) * erosion_const, h_diff * -1);
 				sediment += take;
-				context.heightmap[old_at()] -= take;
+				heightmap[old_at()] -= take;
 			}
 		}
 
@@ -116,10 +119,10 @@ private:
 	    return glm::normalize(sum);
 	}
 	int at() {
-		return (int)(pos.y) * context.size + (int)(pos.x);
+		return (int)(pos.y) * size + (int)(pos.x);
 	}
 	int old_at() {
-		return (int)(p_old.y) * context.size + (int)(p_old.x);
+		return (int)(p_old.y) * size + (int)(p_old.x);
 	}
 };
 
@@ -132,8 +135,14 @@ void erosion::simulate(
 		float _gravity,
 		float _evaporation,
 		int max_steps,
-		int drops_per_vertex
+		int drops_per_vertex,
+		float* _heightmap,
+		int _size
 	) {
+
+	heightmap = _heightmap;
+	size = _size;
+	area = size * size;
 
 	inertia = _inertia;
 	min_slope = _min_slope;
@@ -146,7 +155,7 @@ void erosion::simulate(
 	debug::bar::start("terrain erosion");
 
 	for (int ct = 0; ct < 100; ct ++) {
-		for (int i = 0; i < (int)(drops_per_vertex * context.area * (1 / 100.0)); i ++) {
+		for (int i = 0; i < (int)(drops_per_vertex * area * (1 / 100.0)); i ++) {
 			Drop drop = Drop();
 			for (int j = 0; j < max_steps; j ++) {
 				if (drop.erode()) break;

@@ -2,13 +2,15 @@
 #include "runtime_manager.h"
 #include "platform.h"
 #include "../shared/context.h"
+#include "../shared/debug.h"
 
 using namespace runtime;
 long last_time;
 
-void runtime::exec(int size, int chunk) {
-	context.size = size + 1;
-	context.area = context.size * context.size;
+Context context;
+
+void runtime::exec(int size, int chunk, float* heightmap) {
+	context = Context(heightmap, size);
 
 	init(chunk);
 

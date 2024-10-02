@@ -7,6 +7,7 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec3 color;
+flat out int underwater;
 
 const float scale = 20.0;
 
@@ -32,4 +33,10 @@ void main()
         }
         color += vec3(normal.x / 8.0);
         color -= vec3(normal.z / 8.0);
+
+	if (aPos.y < -100) {
+		underwater = 1;
+	} else {
+		underwater = 0;
+	}
 }

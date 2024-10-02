@@ -19,6 +19,12 @@ int load_int(int argc, char** argv, char* name, int preset) {
 	return atoi(argv[i + 1]);
 }
 
+char* load_str(int argc, char** argv, char* name, char* preset) {
+	int i = index(argc, argv, name);
+	if (!i) return preset;
+	return argv[i + 1];
+}
+
 bool load_bool(int argc, char** argv, char* name) {
 	return index(argc, argv, name);
 	

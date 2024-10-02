@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #define __DEBUG_HEADER(color, text) debug::header(__FILE__, __LINE__, color, text)
-#define __DEBUG_LOG_TEMPLATE(color, text, fmt, ...) {__DEBUG_HEADER(color, text); printf(fmt "\n", __VA_ARGS__);}
+#define __DEBUG_LOG_TEMPLATE(color, text, fmt, ...) {__DEBUG_HEADER(color, text); fprintf(stderr, fmt "\n", __VA_ARGS__);}
 
 #define DEBUG_LOG(fmt, ...) __DEBUG_LOG_TEMPLATE(36, "DEBUG", fmt, __VA_ARGS__)
 #define DEBUG_POINT DEBUG_LOG("reached", 0)
