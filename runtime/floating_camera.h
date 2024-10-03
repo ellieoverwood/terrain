@@ -1,8 +1,9 @@
 #pragma once
 
 #include "../include/glm/glm.hpp"
+#include "camera.h"
 
-class FloatingCamera {
+class FloatingCamera : public Camera {
 public:
 	FloatingCamera() {};
 	void init(int width, int height, glm::vec3 position, glm::vec3 front, float movement_speed_walk, float movement_speed_run, float fov_walk, float fov_run, float mouse_sensitivity);
@@ -13,8 +14,10 @@ public:
 	void turn(int x, int y);
 	void toggle_run();
 	void resize(int width, int height);
-	glm::mat4 view();
-	glm::mat4 proj(int width, int height, double delta_time);
+	void update(int width, int height, double delta_time);
+
+	glm::mat4 matrix() override;
+
 	glm::vec3 position;
 private:
 	glm::vec3 up;
@@ -38,4 +41,6 @@ private:
 
 	int last_x;
 	int last_y;
+
+	glm::mat4 _matrix;
 };

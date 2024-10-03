@@ -90,11 +90,11 @@ void FloatingCamera::turn(int x, int y) {
 	front = glm::normalize(direction);
 }
 
-glm::mat4 FloatingCamera::view() {
-	return glm::lookAt(position, position + front, up);
+glm::mat4 FloatingCamera::matrix() {
+	return _matrix;
 }
 
-glm::mat4 FloatingCamera::proj(int width, int height, double delta_time) {
+void FloatingCamera::update(int width, int height, double delta_time) {
 	if (fov_target != fov) {
 		if (abs(fov_target - fov) > 1) {
 			fov += (fov_target - fov) * delta_time * 5;
@@ -104,28 +104,5 @@ glm::mat4 FloatingCamera::proj(int width, int height, double delta_time) {
 		}
 	}
 
-	return projection;
+	_matrix = projection * glm::lookAt(position, position + front, up);
 }
-
-/*	void forward(double delta_time);
-	void backward(double delta_time);
-	void left(double delta_time);
-	void right(double delta_time);
-	void turn(int x, int y, double delta_time);
-	void toggle_sprint(double delta_time);
-private:
-	glm::vec3 position;
-	glm::vec3 up;
-	glm::vec3 front;
-	glm::vec3 right;
-	glm::vec3 world_up;
-	float yaw;
-	float pitch;
-
-	float movement_speed_walk;
-	float movement_speed_run;
-	float fov_walk;
-	float fov_run;
-	bool is_running;
-
-	float mouse_sensitivity;*/
