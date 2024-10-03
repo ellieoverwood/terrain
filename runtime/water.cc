@@ -1,7 +1,10 @@
 #include "water.h"
 #include "../shared/context.h"
+#include "platform.h"
+#include "../shared/debug.h"
 
 #include <SDL_opengl.h>
+#include <math.h>
 
 void Water::init(int _scale) {
     scale = _scale;
@@ -43,6 +46,8 @@ void Water::init(int _scale) {
 }
 
 void Water::render() {
+	float h = sin((float)platform::ticks() / 3000) * 10;
+	glUniform1f(glGetUniformLocation(program.id, "hoffset"), h);
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }

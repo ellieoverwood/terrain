@@ -123,7 +123,6 @@ void runtime::render(double delta_time) {
 
 	water.program.use();
 
-	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "model"), 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "view"), 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
 

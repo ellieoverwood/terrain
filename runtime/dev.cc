@@ -17,5 +17,10 @@ void dev::update() {
 		}
 	}
 
+	if (ImGui::CollapsingHeader("Performance")) {
+		ImGui::LabelText("FPS", "%d", dev::fps);
+		ImGui::LabelText("Triangles", "%d", dev::triangle_ct);
+	}
+
 	ImGui::End();
 }

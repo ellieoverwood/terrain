@@ -5,6 +5,9 @@
 #include <SDL_opengl.h>
 #include <stdio.h>
 #include <string.h>
+#include "dev.h"
+
+int dev::triangle_ct;
 
 void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist) {
 	world_scale = _scale;
@@ -231,6 +234,7 @@ void TerrainRenderer::update(glm::vec2 cam) {
 			}
 		}
 
+		dev::triangle_ct = triangles;
 		DEBUG_LOG("unculled total triangle count: %d", triangles);
 	}
 

@@ -7,7 +7,7 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec3 color;
-flat out int underwater;
+out float underwater;
 
 const float scale = 20.0;
 
@@ -31,11 +31,12 @@ void main()
             vec3 yellow = mix(color, vec3(0.796, 0.741, 0.576), clamp(angle_yaxis(normal) * 7, 0.0, 1.0));
             color = mix(color, yellow, clamp((2 * scale - aPos.y) / (2 * scale), 0.0, 1.0));
         }
-        color += vec3(normal.x / 8.0);
-        color -= vec3(normal.z / 8.0);
 
-	if (aPos.y < -100) {
-		underwater = 1;
+	float shadow = dot(normalize(vec3(0.3, -1.0, 0.3)), normal);
+        color -= vec3(shadow / 5);
+
+	if (aPos.y < -50) {
+		underwater = max((40 + aPos.y * -1) / 20.0, 1);
 	} else {
 		underwater = 0;
 	}
