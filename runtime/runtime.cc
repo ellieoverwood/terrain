@@ -85,7 +85,8 @@ void runtime::init(int chunk) {
 
 	terrain.init(chunk, 20, 0.03);
 
-	water.init(20);
+	//DEBUG_LOG("%f", 
+	water.init(20 * context.size, (Camera*)(&cam));
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -111,23 +112,16 @@ void runtime::render(double delta_time) {
 
 	glm::mat4 camera = cam.matrix();
 
+	Transform t2 = Transform();
+
 	// TERRAIN
 
 	terrain_p.use();
 
 	glUniformMatrix4fv(glGetUniformLocation(terrain_p.id, "camera"), 1, GL_FALSE, glm::value_ptr(camera));
+	glUniformMatrix4fv(glGetUniformLocation(terrain_p.id, "transform"), 1, GL_FALSE, glm::value_ptr(t2.matrix()));
 
 	terrain.render();
-
-	// WATER
-	Transform t = Transform();
-	t.angle = platform::ticks() / 10000.0;
-	glm::mat4 transm = t.matrix();
-
-	water.program.use();
-
-	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "camera"), 1, GL_FALSE, glm::value_ptr(camera));
-	glUniformMatrix4fv(glGetUniformLocation(water.program.id, "transform"), 1, GL_FALSE, glm::value_ptr(transm));
 
 	water.render();
 }

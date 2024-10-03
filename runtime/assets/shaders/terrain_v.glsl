@@ -3,6 +3,7 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 normal;
 
 uniform mat4 camera;
+uniform mat4 transform;
 
 out vec3 color;
 out float underwater;
@@ -17,7 +18,7 @@ float angle_yaxis(vec3 norm) {
 
 void main()
 {
-    	gl_Position = camera * vec4(aPos, 1.0f);
+    	gl_Position = camera * transform * vec4(aPos, 1.0f);
 
         color = vec3(0.40, 0.28, 0.35);
         color = mix(color, vec3(0.25, 0.61, 0.04), clamp(angle_yaxis(normal) * 2, 0.0, 1.0));

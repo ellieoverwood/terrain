@@ -1,11 +1,9 @@
 #include "shader.h"
+#include "entity.h"
 
-class Water {
+class Water : Mesh {
 public:
-	void init(int scale);
+	void init(int scale, Camera* cam);
 	void render();
-	Program program;
 private:
-	int scale;
-	unsigned int VAO, VBO, EBO;
 };

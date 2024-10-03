@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "../include/glm/glm.hpp"
 #include "../include/glm/gtc/matrix_transform.hpp"
+#include "../shared/debug.h"
 
 class Transform {
 public:
@@ -20,26 +21,29 @@ public:
 
 class Entity {
 public:
-	Entity(Program program, Camera* cam, Transform transform);
-
+	Entity() {};
 	virtual void render();
 	virtual void terminate();
 
+	void init_entity(Program program, Camera* cam, Transform trans);
+
 	Program program;
 	Camera* cam;
+	Transform trans;
 	unsigned int VAO;
 };
 
 class Mesh: public Entity {
 public:
-	Mesh(float* vertices, unsigned int vbo_size, unsigned int* indices, unsigned int ebo_size);
-
+	Mesh() {};
+	void render();
 	void terminate();
+	void init_mesh(float* vertices, unsigned int vertex_count, unsigned int* indices, unsigned int triangle_count);
 
 	unsigned int EBO;
 	unsigned int VBO;
-	unsigned int EBO_size;
-	unsigned int VBO_size;
+	unsigned int triangle_count;
+	unsigned int vertex_count;
 };
 
 class NormalMesh: public Mesh {
