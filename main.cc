@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
-	int chunk    = cmd_args::load_int (argc, argv, "-chunk", 32);
+	int chunk    = cmd_args::load_int (argc, argv, "-chunk", 64);
 	int size     = cmd_args::load_int (argc, argv, "-size", 32 * 64);
 	bool gen     = cmd_args::load_bool(argc, argv, "-gen");
 	bool run     = cmd_args::load_bool(argc, argv, "-run");

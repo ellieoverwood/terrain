@@ -83,7 +83,7 @@ void runtime::init(int chunk) {
 		0.1
 	);
 
-	terrain.init(chunk, 20, 0.03);
+	terrain.init(chunk, 20, 0.03, (Camera*)(&cam));
 
 	//DEBUG_LOG("%f", 
 	water.init(20 * context.size, (Camera*)(&cam));
@@ -94,9 +94,6 @@ void runtime::init(int chunk) {
 
     	glEnable(GL_BLEND);
     	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	terrain_p = Program("terrain_v.glsl", "terrain_f.glsl");
-	simple_p  = Program("simple_v.glsl", "simple_f.glsl");
 }
 
 void runtime::update(double delta_time) {
@@ -110,19 +107,9 @@ void runtime::render(double delta_time) {
 	glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glm::mat4 camera = cam.matrix();
-
-	Transform t2 = Transform();
-
 	// TERRAIN
 
-	terrain_p.use();
-
-	glUniformMatrix4fv(glGetUniformLocation(terrain_p.id, "camera"), 1, GL_FALSE, glm::value_ptr(camera));
-	glUniformMatrix4fv(glGetUniformLocation(terrain_p.id, "transform"), 1, GL_FALSE, glm::value_ptr(t2.matrix()));
-
 	terrain.render();
-
 	water.render();
 }
 

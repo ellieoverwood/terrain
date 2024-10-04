@@ -2,14 +2,19 @@
 #include "../shared/context.h"
 #include "../shared/debug.h"
 #include <stdlib.h>
-#include <SDL_opengl.h>
 #include <stdio.h>
 #include <string.h>
 #include "dev.h"
+#include "camera.h"
 
 int dev::triangle_ct;
+Program terrain_program;
+Camera* cam_ptr;
 
-void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist) {
+void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist, Camera* cam) {
+	cam_ptr = cam;
+	terrain_program = Program("terrain_v.glsl", "terrain_f.glsl");
+
 	world_scale = _scale;
 	chunk_size = _chunk_size;
 	chunk_side_count = context.size / chunk_size;
@@ -40,12 +45,6 @@ void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist) {
 	old_z = -1;
 
 	chunks = (Chunk*)malloc(sizeof(Chunk) * chunk_side_count * chunk_side_count);
-
-	for (int y = 0; y < chunk_side_count; y ++) {
-		for (int x = 0; x < chunk_side_count; x ++) {
-			chunks[y*chunk_side_count+x] = Chunk(x, y, chunk_size, world_scale);
-		}
-	}
 }
 
 int TerrainRenderer::distance(int x1, int y1, int x2, int y2) {
@@ -158,6 +157,8 @@ int gen_triangle_map_with_edges(unsigned int* indices, int chunk_size, int scale
 void TerrainRenderer::update(glm::vec2 cam) {
 	Chunk* closest = world_to_chunk(cam);
 
+	DEBUG_POINT;
+
 	if (closest->x != old_x || closest->y != old_z) {
 		old_x = closest->x;
 		old_z = closest->y;
@@ -206,10 +207,13 @@ void TerrainRenderer::update(glm::vec2 cam) {
 						case 8: indices_index = indices8; break;
 						case 16: indices_index = indices16; break;
 					}
-					if (!first) chunk->erase();
-					
+					if (!first) {
+						chunk->terminate();
+					}
+
 					int ct = 2 * (chunk_size / dist) * (chunk_size / dist);
-					chunk->gen(dist, indices_index, ct, false);
+
+					*chunk = Chunk(x, y, chunk_size, world_scale, dist, indices_index, ct, false);
 				} else {
 					int indices_len = gen_triangle_map_with_edges(
 							indices_buffer, 
@@ -223,9 +227,9 @@ void TerrainRenderer::update(glm::vec2 cam) {
 
 					unsigned int* indices_final = (unsigned int*)malloc(sizeof(unsigned int) * indices_len);
 					memcpy(indices_final, indices_buffer, indices_len * sizeof(unsigned int));
+					if (!first) chunk->terminate();
 
-					if (!first) chunk->erase();
-					chunk->gen(dist, indices_final, indices_len / 3, true);
+					*chunk = Chunk(x, y, chunk_size, world_scale, dist, indices_final, indices_len / 3, true);
 		
 				}
 
@@ -242,40 +246,20 @@ void TerrainRenderer::update(glm::vec2 cam) {
 }
 
 void TerrainRenderer::render() {
+	chunks[0].init_render();
+
 	for (int y = 0; y < chunk_side_count; y ++) {
 		for (int x = 0; x < chunk_side_count; x ++) {
-			chunks[y*chunk_side_count+x].render();
+			chunks[y*chunk_side_count+x].cycle_render();
 		}
 	}
 }
 
-TerrainRenderer::Chunk::Chunk(int _x, int _y, int _size, int _world_scale) {
+TerrainRenderer::Chunk::Chunk(int _x, int _y, int _size, int _world_scale, int _scale, unsigned int* _indices, int _triangle_ct, bool _custom_trianglemap) {
 	x = _x;
 	y = _y;
 	size = _size;
 	world_scale = _world_scale;
-}
-
-float TerrainRenderer::Chunk::at(int _x, int _y) {
-	int abs_x = _x + (x * size);
-	int abs_y = _y + (y * size);
-	return context.heightmap[abs_y * context.size + abs_x];
-}
-
-glm::vec3 TerrainRenderer::Chunk::world(int _x, int _y) {
-	int __x = _x * scale + (x * size);
-	float __y = at(_x * scale, _y * scale);
-	int __z = _y * scale + (y * size);
-
-	glm::vec3 w;
-	w.x = __x*(float)world_scale;
-	w.y = __y*(float)world_scale;
-	w.z = __z*(float)world_scale;
-
-	return w;
-}
-
-void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices, int _triangle_ct, bool _custom_trianglemap) {
 	indices = _indices;
 	scale = _scale;
 
@@ -331,43 +315,34 @@ void TerrainRenderer::Chunk::gen(int _scale, unsigned int* _indices, int _triang
 		}
 	}
 }
-
-	//printf("%d %d %d\n", indices[0], indices[1], indices[2]);
-
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, area * sizeof(float) * 3, vertices, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_ct * 3 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
-    glGenBuffers(1, &nVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, nVBO);
-    glBufferData(GL_ARRAY_BUFFER, area * sizeof(float) * 3, normals, GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(1);
-
+	init_entity(terrain_program, cam_ptr, Transform());
+	init_mesh(vertices, area, indices, triangle_ct);
+	init_normal_mesh(normals);
 }
 
-void TerrainRenderer::Chunk::erase() {
+float TerrainRenderer::Chunk::at(int _x, int _y) {
+	int abs_x = _x + (x * size);
+	int abs_y = _y + (y * size);
+	return context.heightmap[abs_y * context.size + abs_x];
+}
+
+glm::vec3 TerrainRenderer::Chunk::world(int _x, int _y) {
+	int __x = _x * scale + (x * size);
+	float __y = at(_x * scale, _y * scale);
+	int __z = _y * scale + (y * size);
+
+	glm::vec3 w;
+	w.x = __x*(float)world_scale;
+	w.y = __y*(float)world_scale;
+	w.z = __z*(float)world_scale;
+
+	return w;
+}
+
+void TerrainRenderer::Chunk::terminate() {
 	free(vertices);
 	free(normals);
 	if (custom_trianglemap) free(indices);
 
-	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
-	glDeleteBuffers(1, &nVBO);
-	glDeleteVertexArrays(1, &VAO);
-}
-
-void TerrainRenderer::Chunk::render() {
-    	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, triangle_ct * 3, GL_UNSIGNED_INT, 0);
+	terminate_normal_mesh();
 }

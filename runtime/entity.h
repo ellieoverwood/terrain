@@ -22,9 +22,9 @@ public:
 class Entity {
 public:
 	Entity() {};
-	virtual void render();
-	virtual void terminate();
+	void init_render();
 
+	void terminate_entity();
 	void init_entity(Program program, Camera* cam, Transform trans);
 
 	Program program;
@@ -36,8 +36,8 @@ public:
 class Mesh: public Entity {
 public:
 	Mesh() {};
-	void render();
-	void terminate();
+	void cycle_render();
+	void terminate_mesh();
 	void init_mesh(float* vertices, unsigned int vertex_count, unsigned int* indices, unsigned int triangle_count);
 
 	unsigned int EBO;
@@ -48,9 +48,9 @@ public:
 
 class NormalMesh: public Mesh {
 public:
-	NormalMesh(float* normals);
-
-	void terminate();
+	NormalMesh() {};
+	void init_normal_mesh(float* normals);
+	void terminate_normal_mesh();
 
 	unsigned int NBO;
 };

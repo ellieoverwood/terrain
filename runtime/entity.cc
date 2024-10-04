@@ -39,16 +39,14 @@ void Entity::init_entity(Program _program, Camera* _cam, Transform _trans) {
 	glBindVertexArray(VAO);
 }
 
-void Entity::render() {
+void Entity::init_render() {
 	program.use();
 
 	glUniformMatrix4fv(glGetUniformLocation(program.id, "camera"), 1, GL_FALSE, glm::value_ptr(cam->matrix()));
 	glUniformMatrix4fv(glGetUniformLocation(program.id, "transform"), 1, GL_FALSE, glm::value_ptr(trans.matrix()));
-
-	glBindVertexArray(VAO);
 }
 
-void Entity::terminate() {
+void Entity::terminate_entity() {
 	glDeleteVertexArrays(1, &VAO);
 }
 
@@ -69,14 +67,27 @@ void Mesh::init_mesh(float* vertices, unsigned int _vertex_count, unsigned int* 
 
 }
 
-void Mesh::render() {
-	Entity::render();
+void Mesh::cycle_render() {
+	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, triangle_count * 3, GL_UNSIGNED_INT, 0);
 }
 
-void Mesh::terminate() {
+void Mesh::terminate_mesh() {
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
 
-	Entity::terminate();
+	terminate_entity();
+}
+
+void NormalMesh::init_normal_mesh(float* normals) {
+	glGenBuffers(1, &NBO);
+	glBindBuffer(GL_ARRAY_BUFFER, NBO);
+	glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(float) * 3, normals, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
+}
+
+void NormalMesh::terminate_normal_mesh() {
+	glDeleteBuffers(1, &NBO);
+	terminate_mesh();
 }

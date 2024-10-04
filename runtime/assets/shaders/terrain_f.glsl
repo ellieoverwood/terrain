@@ -21,7 +21,8 @@ void main()
 	if (underwater >= 0.1) {
 		distance = abs(1.0f - (LinearizeDepth(gl_FragCoord.z, 50) / 50));
 		transformed_color = mix(transformed_color, vec3(0.2, 0.3, 0.6),  min(1.0 - distance, underwater));
-    	}
+    		transformed_color = mix(transformed_color, vec3(0.0), min(underwater/100, 0.5));
+	}
 
     	FragColor = vec4(transformed_color.xyz, 1.0f);
 }

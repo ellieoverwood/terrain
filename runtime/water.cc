@@ -27,5 +27,6 @@ void Water::init(int scale, Camera* cam) {
 
 void Water::render() {
 	trans.model.y = sin((float)platform::ticks() / 3000) * 10;
-	Mesh::render();
+	init_render();
+	cycle_render();
 }

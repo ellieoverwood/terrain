@@ -1,27 +1,25 @@
 #pragma once
 #include "../include/glm/glm.hpp"
+#include "entity.h"
 
 class TerrainRenderer {
 public:
 	TerrainRenderer() {};
-	void init(int chunk_size, int scale, float occlusion_dist);
+	void init(int chunk_size, int scale, float occlusion_dist, Camera* cam);
 	void update(glm::vec2 cam);
 	void render();
-	class Chunk {
+	class Chunk : public NormalMesh {
 	public:
-		Chunk(int x, int y, int size, int world_scale);
-		void gen(int scale, unsigned int* indices, int triangle_ct, bool custom_trianglemap);
-		void erase();
-		void render();
+		Chunk(int x, int y, int size, int world_scale, int scale, unsigned int* indices, int triangle_ct, bool custom_trianglemap);
+		void terminate();
 		glm::vec3 world(int x, int y);
 		float at(int x, int y);
 		int x, y, scale, triangle_ct, id; // id is to tell if the chunk has meaningfully changed
+		int size, world_scale;
 	private:
 		float* vertices;
 		float* normals;
 		unsigned int* indices;
-		unsigned int VBO, VAO, EBO, nVBO;
-		int size, world_scale;
 		bool custom_trianglemap;
 	};
 private:
