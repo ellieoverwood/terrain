@@ -5,7 +5,7 @@
 class TerrainRenderer {
 public:
 	TerrainRenderer() {};
-	void init(int chunk_size, int scale, float occlusion_dist, Camera* cam);
+	void init(int chunk_size, int scale, float occlusion_dist, Camera** cam);
 	void update(glm::vec2 cam);
 	void render();
 	class Chunk : public NormalMesh {
@@ -23,6 +23,7 @@ public:
 		bool custom_trianglemap;
 	};
 	float     height_at(double x, double y);
+	glm::vec3 normal_at(double x, double y);
 private:
 	Chunk*    world_to_chunk(glm::vec2 world);
 	Chunk* chunks;

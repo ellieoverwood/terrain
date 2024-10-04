@@ -3,6 +3,6 @@
 
 class Water : public Mesh {
 public:
-	void init(int scale, Camera* cam);
+	void init(int scale, Camera** cam);
 	void render();
 };

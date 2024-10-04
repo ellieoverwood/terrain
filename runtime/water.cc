@@ -6,7 +6,7 @@
 #include <SDL_opengl.h>
 #include <math.h>
 
-void Water::init(int scale, Camera* cam) {
+void Water::init(int scale, Camera** cam) {
     #define DOWN_OFFSET -40.0f
 
     float vertices[4 * 3] = {

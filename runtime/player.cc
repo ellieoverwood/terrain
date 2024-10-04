@@ -1,14 +1,25 @@
-#include "floating_camera.h"
+#include "player.h"
 #include <SDL_opengl.h>
 #include "../include/glm/gtc/matrix_transform.hpp"
 #include <stdio.h>
 
-void FloatingCamera::check_collision() {
-	float height = terrain->height_at(position.x, position.z) + 30;
-	if (position.y < height) position.y = height;
+float Player::underground() {
+	float ground = terrain->height_at(position.x, position.z) + 6;
+	if (position.y < ground) return ground;
+	return 0.0;
 }
 
-void FloatingCamera::init(int width, int height, glm::vec3 _position, glm::vec3 _front, float _movement_speed_walk, float _movement_speed_run, float _fov_walk, float _fov_run, float _mouse_sensitivity, TerrainRenderer* _terrain) {
+void Player::gravity(double delta_time) {
+	velocity_down += gravity_const * delta_time;
+	position.y += velocity_down;
+	float ground = underground();
+	if (ground != 0.0) {
+		position.y = ground;
+		velocity_down = 0;
+	}
+}
+
+void Player::init(int width, int height, glm::vec3 _position, glm::vec3 _front, float _movement_speed_walk, float _movement_speed_run, float _fov_walk, float _fov_run, float _mouse_sensitivity, TerrainRenderer* _terrain) {
 	position = _position;
 	front = _front;
 	movement_speed_walk = _movement_speed_walk;
@@ -34,45 +45,37 @@ void FloatingCamera::init(int width, int height, glm::vec3 _position, glm::vec3 
 	terrain = _terrain;
 }
 
-void FloatingCamera::resize(int width, int height) {
+void Player::resize(int width, int height) {
 	glViewport(0, 0, width, height);
 	projection = glm::perspective(glm::radians(fov), (float)width/(float)height, 3.0f, 100000.0f);
 }
 
-void FloatingCamera::toggle_run() {
+void Player::toggle_run() {
 	is_running = !is_running;
 	fov_target = is_running ? fov_run : fov_walk;
 }
 
-void FloatingCamera::move_forward(double delta_time) {
+void Player::move_forward(double delta_time) {
 	float speed = (is_running ? movement_speed_run : movement_speed_walk) * delta_time;
-	position += speed * front;
-
-	check_collision();
+	position += speed * movement_front;
 }
 
-void FloatingCamera::move_backward(double delta_time) {
+void Player::move_backward(double delta_time) {
 	float speed = (is_running ? movement_speed_run : movement_speed_walk) * delta_time;
-	position -= speed * front;
-
-	check_collision();
+	position -= speed * movement_front;
 }
 
-void FloatingCamera::move_left(double delta_time) {
+void Player::move_left(double delta_time) {
 	float speed = (is_running ? movement_speed_run : movement_speed_walk) * delta_time;
-	position -= speed * glm::normalize(glm::cross(front, up));
-
-	check_collision();
+	position -= speed * glm::normalize(glm::cross(movement_front, up));
 }
 
-void FloatingCamera::move_right(double delta_time) {
+void Player::move_right(double delta_time) {
 	float speed = (is_running ? movement_speed_run : movement_speed_walk) * delta_time;
-	position += speed * glm::normalize(glm::cross(front, up));
-
-	check_collision();
+	position += speed * glm::normalize(glm::cross(movement_front, up));
 }
 
-void FloatingCamera::turn(int x, int y) {
+void Player::turn(int x, int y) {
     x += last_x;
     y += last_y;
     float xoff = x - last_x;
@@ -103,13 +106,14 @@ void FloatingCamera::turn(int x, int y) {
 	direction.y = sin(glm::radians(pitch));
 	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	front = glm::normalize(direction);
+	movement_front = glm::vec3(front.x, 0.0, front.z);
 }
 
-glm::mat4 FloatingCamera::matrix() {
+glm::mat4 Player::matrix() {
 	return _matrix;
 }
 
-void FloatingCamera::update(int width, int height, double delta_time) {
+void Player::update(int width, int height, double delta_time) {
 	if (fov_target != fov) {
 		if (abs(fov_target - fov) > 1) {
 			fov += (fov_target - fov) * delta_time * 5;
@@ -119,5 +123,6 @@ void FloatingCamera::update(int width, int height, double delta_time) {
 		}
 	}
 
+	gravity(delta_time);
 	_matrix = projection * glm::lookAt(position, position + front, up);
 }

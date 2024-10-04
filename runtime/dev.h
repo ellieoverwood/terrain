@@ -3,4 +3,6 @@ namespace dev {
 	extern int triangle_ct;
 
 	void update();
+
+	void toggle_floating_camera();
 }

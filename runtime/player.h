@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../include/glm/glm.hpp"
 #include "camera.h"
 #include "terrain.h"
 
-class FloatingCamera : public Camera {
+class Player : public Camera {
 public:
-	FloatingCamera() {};
+	glm::mat4 matrix() override;
 	void init(int width, int height, glm::vec3 position, glm::vec3 front, float movement_speed_walk, float movement_speed_run, float fov_walk, float fov_run, float mouse_sensitivity, TerrainRenderer* terrain);
+
 	void move_forward(double delta_time);
 	void move_backward(double delta_time);
 	void move_left(double delta_time);
@@ -17,13 +17,12 @@ public:
 	void resize(int width, int height);
 	void update(int width, int height, double delta_time);
 
-	glm::mat4 matrix() override;
-
 	glm::vec3 position;
 	float yaw;
 	float pitch;
 	glm::vec3 up;
 	glm::vec3 front;
+	glm::vec3 movement_front;
 private:
 	glm::mat4 projection;
 
@@ -42,7 +41,10 @@ private:
 	int last_y;
 
 	glm::mat4 _matrix;
+
 	TerrainRenderer* terrain;
-	
-	void check_collision();
+	float velocity_down = 0;
+	float gravity_const = -0.5;
+	float underground();
+	void gravity(double delta_time);
 };

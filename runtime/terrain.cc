@@ -9,9 +9,9 @@
 
 int dev::triangle_ct;
 Program terrain_program;
-Camera* cam_ptr;
+Camera** cam_ptr;
 
-void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist, Camera* cam) {
+void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist, Camera** cam) {
 	cam_ptr = cam;
 	terrain_program = Program("terrain_v.glsl", "terrain_f.glsl");
 
@@ -357,15 +357,39 @@ float TerrainRenderer::height_at(double x, double y) {
 	int ix = x;
 	int iy = y;
 
-	float a = context.heightmap[iy*context.size+ix];
-	float b = context.heightmap[iy*context.size+(ix+1)];
-	float c = context.heightmap[(iy+1)*context.size+ix];
-	float d = context.heightmap[(iy+1)*context.size+(ix+1)];
+	float v1 = context.heightmap[iy*context.size+ix];
+	float v2 = context.heightmap[iy*context.size+(ix+1)];
+	float v3 = context.heightmap[(iy+1)*context.size+ix];
+	float v4 = context.heightmap[(iy+1)*context.size+(ix+1)];
 
-	float wa = weight(ix, iy, x, y);
-	float wb = weight(ix+1, iy, x, y);
-	float wc = weight(ix, iy+1, x, y);
-	float wd = weight(ix+1, iy+1, x, y);
+	float q1 = v1 * ((ix + 1) - x) + v2 * (x - ix);
+	float q2 = v3 * ((ix + 1) - x) + v4 * (x - ix);
+	float q = q1 * ((iy + 1) - y) + q2 * (y - iy);
 
-	return ((wa*a + wb*b + wc*c + wd*d) / (wa + wb + wc + wd)) * world_scale;
+	return q * world_scale;
+}
+
+glm::vec3 TerrainRenderer::normal_at(double x, double y) {
+	x /= world_scale;
+	y /= world_scale;
+
+	int ix = x;
+	int iy = y;
+
+	float v1 = context.heightmap[iy*context.size+ix];
+	float v2 = context.heightmap[iy*context.size+(ix+1)];
+	float v3 = context.heightmap[(iy+1)*context.size+ix];
+	float v4 = context.heightmap[(iy+1)*context.size+(ix+1)];
+
+	glm::vec3 a1 = glm::vec3(ix, v1, iy);
+	glm::vec3 a2 = glm::vec3(ix+1, v4, iy+1);
+	glm::vec3 a3 = glm::vec3(ix+1, v2, iy);
+
+	glm::vec3 b1 = glm::vec3(ix, v1, iy);
+	glm::vec3 b2 = glm::vec3(ix, v3, iy+1);
+	glm::vec3 b3 = glm::vec3(ix+1, v4, iy+1);
+
+	bool is_triangle_b = (x < y);
+
+	//TODO: calculate surface normal from here
 }

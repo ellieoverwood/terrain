@@ -30,7 +30,7 @@ glm::mat4 Transform::matrix() {
 	return trans;
 }
 
-void Entity::init_entity(Program _program, Camera* _cam, Transform _trans) {
+void Entity::init_entity(Program _program, Camera** _cam, Transform _trans) {
 	program = _program;
 	cam = _cam;
 	trans = _trans;
@@ -42,7 +42,7 @@ void Entity::init_entity(Program _program, Camera* _cam, Transform _trans) {
 void Entity::init_render() {
 	program.use();
 
-	glUniformMatrix4fv(glGetUniformLocation(program.id, "camera"), 1, GL_FALSE, glm::value_ptr(cam->matrix()));
+	glUniformMatrix4fv(glGetUniformLocation(program.id, "camera"), 1, GL_FALSE, glm::value_ptr((*cam)->matrix()));
 	glUniformMatrix4fv(glGetUniformLocation(program.id, "transform"), 1, GL_FALSE, glm::value_ptr(trans.matrix()));
 }
 

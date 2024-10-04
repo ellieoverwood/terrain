@@ -25,10 +25,10 @@ public:
 	void init_render();
 
 	void terminate_entity();
-	void init_entity(Program program, Camera* cam, Transform trans);
+	void init_entity(Program program, Camera** cam, Transform trans);
 
 	Program program;
-	Camera* cam;
+	Camera** cam;
 	Transform trans;
 	unsigned int VAO;
 };

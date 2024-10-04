@@ -22,5 +22,11 @@ void dev::update() {
 		ImGui::LabelText("Triangles", "%d", dev::triangle_ct);
 	}
 
+	if (ImGui::CollapsingHeader("Cheats")) {
+		if (ImGui::Button("Toggle Floating Camera")) {
+			toggle_floating_camera();
+		}
+	}
+
 	ImGui::End();
 }
