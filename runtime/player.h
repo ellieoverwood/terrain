@@ -6,7 +6,7 @@
 class Player : public Camera {
 public:
 	glm::mat4 matrix() override;
-	void init(int width, int height, glm::vec3 position, glm::vec3 front, float movement_speed_walk, float movement_speed_run, float fov_walk, float fov_run, float mouse_sensitivity, TerrainRenderer* terrain);
+	void init(int width, int height, glm::vec3 position, glm::vec3 front, float movement_speed_walk, float movement_speed_run, float mouse_sensitivity, TerrainRenderer* terrain);
 
 	void move_forward(double delta_time);
 	void move_backward(double delta_time);
@@ -28,8 +28,6 @@ private:
 
 	float movement_speed_walk;
 	float movement_speed_run;
-	float fov_walk;
-	float fov_run;
 	bool  is_running;
 	float fov;
 	float fov_target;
@@ -39,12 +37,15 @@ private:
 
 	int last_x;
 	int last_y;
+	float bob_time;
 
 	glm::mat4 _matrix;
 
 	TerrainRenderer* terrain;
-	float velocity_down = 0;
 	float gravity_const = -0.5;
 	float underground();
 	void gravity(double delta_time);
+
+	glm::vec3 input_velocity;
+	glm::vec3 velocity;
 };

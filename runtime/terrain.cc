@@ -381,15 +381,32 @@ glm::vec3 TerrainRenderer::normal_at(double x, double y) {
 	float v3 = context.heightmap[(iy+1)*context.size+ix];
 	float v4 = context.heightmap[(iy+1)*context.size+(ix+1)];
 
-	glm::vec3 a1 = glm::vec3(ix, v1, iy);
-	glm::vec3 a2 = glm::vec3(ix+1, v4, iy+1);
-	glm::vec3 a3 = glm::vec3(ix+1, v2, iy);
+	glm::vec3 p1, p2, p3;
 
 	glm::vec3 b1 = glm::vec3(ix, v1, iy);
 	glm::vec3 b2 = glm::vec3(ix, v3, iy+1);
 	glm::vec3 b3 = glm::vec3(ix+1, v4, iy+1);
 
-	bool is_triangle_b = (x < y);
+	if (x < y) {
+		p1 = glm::vec3(ix, v1, iy);
+		p2 = glm::vec3(ix, v3, iy+1);
+		p3 = glm::vec3(ix+1, v4, iy+1);
+	} else {
+		p1 = glm::vec3(ix, v1, iy);
+		p2 = glm::vec3(ix, v3, iy+1);
+		p3 = glm::vec3(ix+1, v4, iy+1);
+	}
+
+	glm::vec3 u = p2 - p1;
+	glm::vec3 v = p3 - p1;
+
+	glm::vec3 n = glm::vec3(
+		u.y * v.z - u.z * v.y,
+		u.z * v.x - u.x * v.z,
+		u.x * v.y - u.y * v.x
+	);
+
+	return glm::normalize(n);
 
 	//TODO: calculate surface normal from here
 }

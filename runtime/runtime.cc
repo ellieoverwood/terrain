@@ -22,6 +22,7 @@ Program terrain_p;
 Program simple_p;
 
 bool in_player;
+bool dev::is_freecam = false;
 
 Camera* cam;
 
@@ -95,8 +96,7 @@ void runtime::init(int chunk) {
 			terrain.height_at(context.size * 10, context.size * 10), 
 			context.size * 10),
 		glm::vec3(0.0f, 0.0f, -1.0f),
-		25, 50,
-		75, 90,
+		15, 30,
 		0.1,
 		&terrain
 	);
@@ -145,4 +145,18 @@ void dev::toggle_floating_camera() {
 	floating_camera.yaw = player.yaw;
 	floating_camera.front = player.front;
 	floating_camera.up = player.up;
+
+	dev::is_freecam = !in_player;
+}
+
+void dev::teleport_to_floating_camera() {
+	in_player = true;
+	dev::is_freecam = false;
+	cam = &player;
+
+	player.position = floating_camera.position;
+	player.pitch = floating_camera.pitch;
+	player.yaw = floating_camera.yaw;
+	player.front = floating_camera.front;
+	player.up = floating_camera.up;
 }

@@ -23,8 +23,11 @@ void dev::update() {
 	}
 
 	if (ImGui::CollapsingHeader("Cheats")) {
-		if (ImGui::Button("Toggle Floating Camera")) {
+		if (ImGui::Button("Toggle Freecam")) {
 			toggle_floating_camera();
+		}
+		if (is_freecam && ImGui::Button("Teleport Here")) {
+			teleport_to_floating_camera();
 		}
 	}
 
