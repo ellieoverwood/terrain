@@ -72,10 +72,12 @@ void runtime::init(int chunk) {
 
 	platform::init(3, 3, "Engine", width, height, 300, 200);
 
+	terrain.init(chunk, 20, 0.03, (Camera*)(&cam));
+
 	cam.init(width, height,
 		glm::vec3(
 			context.size * 10, 
-			context.heightmap[context.size / 2 * context.size + context.size / 2] * 20 + 5, 
+			terrain.height_at(context.size * 10, context.size * 10), 
 			context.size * 10),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		50, 3000,
@@ -83,7 +85,6 @@ void runtime::init(int chunk) {
 		0.1
 	);
 
-	terrain.init(chunk, 20, 0.03, (Camera*)(&cam));
 
 	//DEBUG_LOG("%f", 
 	water.init(20 * context.size, (Camera*)(&cam));

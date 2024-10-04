@@ -157,8 +157,6 @@ int gen_triangle_map_with_edges(unsigned int* indices, int chunk_size, int scale
 void TerrainRenderer::update(glm::vec2 cam) {
 	Chunk* closest = world_to_chunk(cam);
 
-	DEBUG_POINT;
-
 	if (closest->x != old_x || closest->y != old_z) {
 		old_x = closest->x;
 		old_z = closest->y;
@@ -345,4 +343,29 @@ void TerrainRenderer::Chunk::terminate() {
 	if (custom_trianglemap) free(indices);
 
 	terminate_normal_mesh();
+}
+
+float max_distance = sqrt(2);
+float weight(double x1, double y1, double x2, double y2) {
+	return 1.0 / sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
+}
+
+float TerrainRenderer::height_at(double x, double y) {
+	x /= world_scale;
+	y /= world_scale;
+
+	int ix = x;
+	int iy = y;
+
+	float a = context.heightmap[iy*context.size+ix];
+	float b = context.heightmap[iy*context.size+(ix+1)];
+	float c = context.heightmap[(iy+1)*context.size+ix];
+	float d = context.heightmap[(iy+1)*context.size+(ix+1)];
+
+	float wa = weight(ix, iy, x, y);
+	float wb = weight(ix+1, iy, x, y);
+	float wc = weight(ix, iy+1, x, y);
+	float wd = weight(ix+1, iy+1, x, y);
+
+	return ((wa*a + wb*b + wc*c + wd*d) / (wa + wb + wc + wd)) * world_scale;
 }

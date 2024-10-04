@@ -22,8 +22,8 @@ public:
 		unsigned int* indices;
 		bool custom_trianglemap;
 	};
+	float     height_at(double x, double y);
 private:
-	Chunk*    chunk_at(int x, int y);
 	Chunk*    world_to_chunk(glm::vec2 world);
 	Chunk* chunks;
 	int chunk_side_count;
