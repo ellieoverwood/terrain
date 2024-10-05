@@ -9,6 +9,11 @@ float Player::underground() {
 	return 0.0;
 }
 
+void Player::jump() {
+	float ground = terrain->height_at(position.x, position.z) + 6;
+	if (position.y <= (ground + 1) && velocity.y <= 0) velocity.y = 1;
+}
+
 void Player::init(int width, int height, glm::vec3 _position, glm::vec3 _front, float _movement_speed_walk, float _movement_speed_run, float _mouse_sensitivity, TerrainRenderer* _terrain) {
 	position = _position;
 	front = _front;
@@ -103,28 +108,40 @@ glm::mat4 Player::matrix() {
 }
 
 void Player::update(int width, int height, double delta_time) {
-	velocity.y += gravity_const;
-	float ground = underground();
+	velocity.y += gravity_const * delta_time;
+	glm::vec3 norm = terrain->normal_at(position.x, position.z);
+	glm::vec3 downward_slope = glm::vec3(0, -1, 0) - glm::dot(glm::vec3(0, -1, 0), norm) * norm;
 
-	if (ground != 0.0) {
-		velocity.y = 0.0;
+	float angle = glm::length(downward_slope);
+
+	bob_time += delta_time * glm::length(input_velocity) * 0.5;
+
+	if (angle > 0.3f) {
+		velocity += glm::normalize(downward_slope) * 20.0f * (float)delta_time * (angle - 0.3f);
+		//velocity.y -= 3;
 	}
 
-	position += velocity * (float)delta_time;
+	position += velocity;
 	position += input_velocity * (float)delta_time;
 
-	if (ground != 0.0) {
+	velocity.x *= 1.0 - (delta_time * 3);
+	velocity.z *= 1.0 - (delta_time * 3);
+
+	if (fabs(velocity.x) < 0.01) velocity.x = 0;
+	if (fabs(velocity.z) < 0.01) velocity.z = 0;
+
+	float ground = underground();
+	if (ground != 0.0 && velocity.y <= 0) {
 		position.y = ground;
 	}
 
 	if (fov_target != fov) {
-		if (abs(fov_target - fov) > 1) {
+		if (fabs(fov_target - fov) > 1) {
 			fov += (fov_target - fov) * delta_time * 5;
 			resize(width, height);
 		}
 	}
 
-	bob_time += delta_time * glm::length(input_velocity) * 0.5;
 	fov_target = 45 + glm::length(input_velocity);
 
 	glm::vec3 hoff = glm::vec3(0, sin(bob_time), 0);

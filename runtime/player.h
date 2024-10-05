@@ -12,6 +12,7 @@ public:
 	void move_backward(double delta_time);
 	void move_left(double delta_time);
 	void move_right(double delta_time);
+	void jump();
 	void turn(int x, int y);
 	void toggle_run();
 	void resize(int width, int height);
@@ -42,7 +43,7 @@ private:
 	glm::mat4 _matrix;
 
 	TerrainRenderer* terrain;
-	float gravity_const = -0.5;
+	float gravity_const = -3;
 	float underground();
 	void gravity(double delta_time);
 

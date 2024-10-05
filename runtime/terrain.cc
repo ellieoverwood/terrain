@@ -393,8 +393,8 @@ glm::vec3 TerrainRenderer::normal_at(double x, double y) {
 		p3 = glm::vec3(ix+1, v4, iy+1);
 	} else {
 		p1 = glm::vec3(ix, v1, iy);
-		p2 = glm::vec3(ix, v3, iy+1);
-		p3 = glm::vec3(ix+1, v4, iy+1);
+		p2 = glm::vec3(ix+1, v4, iy+1);
+		p3 = glm::vec3(ix+1, v2, iy);
 	}
 
 	glm::vec3 u = p2 - p1;
