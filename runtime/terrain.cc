@@ -1,5 +1,4 @@
 #include "terrain.h"
-#include "../shared/context.h"
 #include "../shared/debug.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,13 +10,23 @@ int dev::triangle_ct;
 Program terrain_program;
 Camera** cam_ptr;
 
-void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist, Camera** cam) {
+int global_heightmap_size;
+float* global_heightmap;
+
+void Terrain::init(int _chunk_size, int _scale, float _occlusion_dist, Camera** cam, float* _heightmap, int _heightmap_size) {
+	heightmap = _heightmap;
+	heightmap_size = _heightmap_size;
+	heightmap_area = heightmap_size * heightmap_size;
+
+	global_heightmap = heightmap;
+	global_heightmap_size = heightmap_size;
+
 	cam_ptr = cam;
 	terrain_program = Program("terrain_v.glsl", "terrain_f.glsl");
 
 	world_scale = _scale;
 	chunk_size = _chunk_size;
-	chunk_side_count = context.size / chunk_size;
+	chunk_side_count = heightmap_size / chunk_size;
 	occlusion_dist = _occlusion_dist * _chunk_size;
 
 	indices_buffer = (unsigned int*)malloc(sizeof(unsigned int) * 6 * chunk_size * chunk_size);
@@ -47,7 +56,7 @@ void TerrainRenderer::init(int _chunk_size, int _scale, float _occlusion_dist, C
 	chunks = (Chunk*)malloc(sizeof(Chunk) * chunk_side_count * chunk_side_count);
 }
 
-int TerrainRenderer::distance(int x1, int y1, int x2, int y2) {
+int Terrain::distance(int x1, int y1, int x2, int y2) {
 	float dist = sqrt(sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2)));
 	dist -= 1.0;
 	//dist *= 1.5;
@@ -59,7 +68,7 @@ int TerrainRenderer::distance(int x1, int y1, int x2, int y2) {
 	return dist;
 }
 
-void TerrainRenderer::gen_indices(int scale, unsigned int* indices) {
+void Terrain::gen_indices(int scale, unsigned int* indices) {
 	int count = 0;
 	int side_length = chunk_size / scale + 1;
 
@@ -77,7 +86,7 @@ void TerrainRenderer::gen_indices(int scale, unsigned int* indices) {
 	}
 }
 
-TerrainRenderer::Chunk* TerrainRenderer::world_to_chunk(glm::vec2 p) {
+Terrain::Chunk* Terrain::world_to_chunk(glm::vec2 p) {
 	//if (p.x < 0) p.x = 0;
 	///if (p.y < 0) p.y = 0;
 	//if (p.x >= chunk_side_count * world_scale) p.x = chunk_side_count * world_scale - 1;
@@ -154,7 +163,7 @@ int gen_triangle_map_with_edges(unsigned int* indices, int chunk_size, int scale
 	return count;
 }
 
-void TerrainRenderer::update(glm::vec2 cam) {
+void Terrain::update(glm::vec2 cam) {
 	Chunk* closest = world_to_chunk(cam);
 
 	if (closest->x != old_x || closest->y != old_z) {
@@ -243,7 +252,7 @@ void TerrainRenderer::update(glm::vec2 cam) {
 	first = false;
 }
 
-void TerrainRenderer::render() {
+void Terrain::render() {
 	chunks[0].init_render();
 
 	for (int y = 0; y < chunk_side_count; y ++) {
@@ -253,7 +262,7 @@ void TerrainRenderer::render() {
 	}
 }
 
-TerrainRenderer::Chunk::Chunk(int _x, int _y, int _size, int _world_scale, int _scale, unsigned int* _indices, int _triangle_ct, bool _custom_trianglemap) {
+Terrain::Chunk::Chunk(int _x, int _y, int _size, int _world_scale, int _scale, unsigned int* _indices, int _triangle_ct, bool _custom_trianglemap) {
 	x = _x;
 	y = _y;
 	size = _size;
@@ -291,7 +300,7 @@ TerrainRenderer::Chunk::Chunk(int _x, int _y, int _size, int _world_scale, int _
 			int iy2 = iy * scale;
 			int abs_x = ix2 + (x * size);
 			int abs_y = iy2 + (y * size);
-			if (abs_x > 0 && abs_y > 0 && abs_x < context.size - 1 && abs_y < context.size - 1) {
+			if (abs_x > 0 && abs_y > 0 && abs_x < global_heightmap_size - 1 && abs_y < global_heightmap_size - 1) {
 				float nw = at(ix2-1, iy2-1);
 				float n  = at(ix2,   iy2-1);
 				float ne = at(ix2+1, iy2-1);
@@ -318,13 +327,13 @@ TerrainRenderer::Chunk::Chunk(int _x, int _y, int _size, int _world_scale, int _
 	init_normal_mesh(normals);
 }
 
-float TerrainRenderer::Chunk::at(int _x, int _y) {
+float Terrain::Chunk::at(int _x, int _y) {
 	int abs_x = _x + (x * size);
 	int abs_y = _y + (y * size);
-	return context.heightmap[abs_y * context.size + abs_x];
+	return global_heightmap[abs_y * global_heightmap_size + abs_x];
 }
 
-glm::vec3 TerrainRenderer::Chunk::world(int _x, int _y) {
+glm::vec3 Terrain::Chunk::world(int _x, int _y) {
 	int __x = _x * scale + (x * size);
 	float __y = at(_x * scale, _y * scale);
 	int __z = _y * scale + (y * size);
@@ -337,7 +346,7 @@ glm::vec3 TerrainRenderer::Chunk::world(int _x, int _y) {
 	return w;
 }
 
-void TerrainRenderer::Chunk::terminate() {
+void Terrain::Chunk::terminate() {
 	free(vertices);
 	free(normals);
 	if (custom_trianglemap) free(indices);
@@ -350,17 +359,17 @@ float weight(double x1, double y1, double x2, double y2) {
 	return 1.0 / sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
 }
 
-float TerrainRenderer::height_at(double x, double y) {
+float Terrain::height_at(double x, double y) {
 	x /= world_scale;
 	y /= world_scale;
 
 	int ix = x;
 	int iy = y;
 
-	float v1 = context.heightmap[iy*context.size+ix];
-	float v2 = context.heightmap[iy*context.size+(ix+1)];
-	float v3 = context.heightmap[(iy+1)*context.size+ix];
-	float v4 = context.heightmap[(iy+1)*context.size+(ix+1)];
+	float v1 = heightmap[iy*heightmap_size+ix];
+	float v2 = heightmap[iy*heightmap_size+(ix+1)];
+	float v3 = heightmap[(iy+1)*heightmap_size+ix];
+	float v4 = heightmap[(iy+1)*heightmap_size+(ix+1)];
 
 	float q1 = v1 * ((ix + 1) - x) + v2 * (x - ix);
 	float q2 = v3 * ((ix + 1) - x) + v4 * (x - ix);
@@ -369,17 +378,17 @@ float TerrainRenderer::height_at(double x, double y) {
 	return q * world_scale;
 }
 
-glm::vec3 TerrainRenderer::normal_at(double x, double y) {
+glm::vec3 Terrain::normal_at(double x, double y) {
 	x /= world_scale;
 	y /= world_scale;
 
 	int ix = x;
 	int iy = y;
 
-	float v1 = context.heightmap[iy*context.size+ix];
-	float v2 = context.heightmap[iy*context.size+(ix+1)];
-	float v3 = context.heightmap[(iy+1)*context.size+ix];
-	float v4 = context.heightmap[(iy+1)*context.size+(ix+1)];
+	float v1 = heightmap[iy*heightmap_size+ix];
+	float v2 = heightmap[iy*heightmap_size+(ix+1)];
+	float v3 = heightmap[(iy+1)*heightmap_size+ix];
+	float v4 = heightmap[(iy+1)*heightmap_size+(ix+1)];
 
 	glm::vec3 p1, p2, p3;
 

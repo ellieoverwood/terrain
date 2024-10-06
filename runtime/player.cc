@@ -14,7 +14,7 @@ void Player::jump() {
 	if (position.y <= (ground + 1) && velocity.y <= 0) velocity.y = 1;
 }
 
-void Player::init(int width, int height, glm::vec3 _position, glm::vec3 _front, float _movement_speed_walk, float _movement_speed_run, float _mouse_sensitivity, TerrainRenderer* _terrain) {
+void Player::init(int width, int height, glm::vec3 _position, glm::vec3 _front, float _movement_speed_walk, float _movement_speed_run, float _mouse_sensitivity, Terrain* _terrain) {
 	position = _position;
 	front = _front;
 	movement_front = glm::vec3(front.x, 0, front.z);

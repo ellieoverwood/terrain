@@ -1,9 +1,7 @@
 #include "gentime/gentime.h"
 #include "runtime/runtime.h"
-#include "shared/context.h"
 #include "shared/debug.h"
 #include "shared/cmd_args.h"
-#include "shared/context.h"
 #include "shared/serialize.h"
 
 #include <stdlib.h>
@@ -26,6 +24,6 @@ int main(int argc, char **argv) {
 	}
 	if (run) {
 		serialize::World world = serialize::load(worldf);
-		runtime::exec(world.size, chunk, world.heightmap);
+		runtime::exec(chunk, world.heightmap, world.size);
 	}
 }

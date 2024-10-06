@@ -18,7 +18,8 @@ void InstancedEntity::init_instances(float* translations, int _count) {
 }
 
 void InstancedEntity::terminate_instances() {
-
+	glDeleteBuffers(1, &iVBO);
+	terminate_mesh();
 }
 
 void InstancedEntity::instanced_render() {

@@ -7,7 +7,7 @@
 class FloatingCamera : public Camera {
 public:
 	FloatingCamera() {};
-	void init(int width, int height, glm::vec3 position, glm::vec3 front, float movement_speed_walk, float movement_speed_run, float fov_walk, float fov_run, float mouse_sensitivity, TerrainRenderer* terrain);
+	void init(int width, int height, glm::vec3 position, glm::vec3 front, float movement_speed_walk, float movement_speed_run, float fov_walk, float fov_run, float mouse_sensitivity, Terrain* terrain);
 	void move_forward(double delta_time);
 	void move_backward(double delta_time);
 	void move_left(double delta_time);
@@ -42,7 +42,7 @@ private:
 	int last_y;
 
 	glm::mat4 _matrix;
-	TerrainRenderer* terrain;
+	Terrain* terrain;
 	
 	void check_collision();
 };

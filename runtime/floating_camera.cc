@@ -8,7 +8,7 @@ void FloatingCamera::check_collision() {
 	if (position.y < height) position.y = height;
 }
 
-void FloatingCamera::init(int width, int height, glm::vec3 _position, glm::vec3 _front, float _movement_speed_walk, float _movement_speed_run, float _fov_walk, float _fov_run, float _mouse_sensitivity, TerrainRenderer* _terrain) {
+void FloatingCamera::init(int width, int height, glm::vec3 _position, glm::vec3 _front, float _movement_speed_walk, float _movement_speed_run, float _fov_walk, float _fov_run, float _mouse_sensitivity, Terrain* _terrain) {
 	position = _position;
 	front = _front;
 	movement_speed_walk = _movement_speed_walk;

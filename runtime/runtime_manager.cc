@@ -1,7 +1,6 @@
 #include "runtime.h"
 #include "runtime_manager.h"
 #include "platform.h"
-#include "../shared/context.h"
 #include "../shared/debug.h"
 #include "dev.h"
 
@@ -10,12 +9,8 @@ long last_time;
 
 int dev::fps;
 
-Context context;
-
-void runtime::exec(int size, int chunk, float* heightmap) {
-	context = Context(heightmap, size);
-
-	init(chunk);
+void runtime::exec(int chunk, float* heightmap, int size) {
+	init(chunk, heightmap, size);
 
 	last_time = platform::ticks() / 1000.0;
 

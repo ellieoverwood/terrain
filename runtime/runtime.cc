@@ -1,5 +1,4 @@
 #include "runtime_manager.h"
-#include "../shared/context.h"
 #include "platform.h"
 #include "shader.h"
 #include "floating_camera.h"
@@ -30,7 +29,7 @@ Camera* cam;
 
 FloatingCamera floating_camera;
 Player player;
-TerrainRenderer terrain;
+Terrain terrain;
 Water water;
 
 //Sprites sprites;
@@ -74,7 +73,7 @@ void on_space(double delta_time) {
 	if (in_player) player.jump();
 }
 
-void runtime::init(int chunk) {
+void runtime::init(int chunk, float* heightmap, int heightmap_size) {
 	platform::on_keydown('w',  &on_w);
 	platform::on_keydown('a',  &on_a);
 	platform::on_keydown('s',  &on_s);
@@ -85,8 +84,9 @@ void runtime::init(int chunk) {
 	platform::on_keypress(' ', &on_space);
 
 	platform::init(3, 3, "Engine", width, height, 300, 200);
+	printf("%d\n", heightmap_size);
 
-	terrain.init(chunk, 20, 0.03, &cam);
+	terrain.init(chunk, 20, 0.03, &cam, heightmap, heightmap_size);
 
 	floating_camera.init(width, height,
 		glm::vec3(0, 0, 0),
@@ -99,9 +99,9 @@ void runtime::init(int chunk) {
 
 	player.init(width, height,
 		glm::vec3(
-			context.size * 10, 
-			terrain.height_at(context.size * 10, context.size * 10), 
-			context.size * 10),
+			heightmap_size * 10, 
+			terrain.height_at(heightmap_size * 10, heightmap_size * 10), 
+			heightmap_size * 10),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		10, 20,
 		0.1,
@@ -112,12 +112,12 @@ void runtime::init(int chunk) {
 	cam = &player;
 
 	//DEBUG_LOG("%f", 
-	water.init(20 * context.size, &cam);
+	water.init(20 * heightmap_size, &cam);
 
 	int ct = 0;
 
-	float x_start = context.size * 10;
-	float y_start = context.size * 10;
+	float x_start = heightmap_size * 10;
+	float y_start = heightmap_size * 10;
 
 	for (int iy = 0; iy < 500; iy ++) {
 		for (int ix = 0; ix < 500; ix ++) {

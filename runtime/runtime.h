@@ -1,5 +1,5 @@
 #pragma once
 
 namespace runtime {
-	void exec(int size, int chunk, float* heightmap);
+	void exec(int chunk, float* heightmap, int heightmap_size);
 }

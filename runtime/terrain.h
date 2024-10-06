@@ -2,10 +2,10 @@
 #include "../include/glm/glm.hpp"
 #include "entity.h"
 
-class TerrainRenderer {
+class Terrain {
 public:
-	TerrainRenderer() {};
-	void init(int chunk_size, int scale, float occlusion_dist, Camera** cam);
+	Terrain() {};
+	void init(int chunk_size, int scale, float occlusion_dist, Camera** cam, float* heightmap, int heightmap_size);
 	void update(glm::vec2 cam);
 	void render();
 	class Chunk : public NormalMesh {
@@ -24,6 +24,9 @@ public:
 	};
 	float     height_at(double x, double y);
 	glm::vec3 normal_at(double x, double y);
+	int heightmap_size;
+	int heightmap_area;
+	float* heightmap;
 private:
 	Chunk*    world_to_chunk(glm::vec2 world);
 	Chunk* chunks;
