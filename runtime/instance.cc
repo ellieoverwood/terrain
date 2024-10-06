@@ -1,8 +1,8 @@
-#include "sprites.h"
+#include "instance.h"
 #include <SDL_opengl.h>
 #include "primitives.h"
 
-void Sprites::init_sprites(float* translations, int _count) {
+void InstancedEntity::init_instances(float* translations, int _count) {
 	instance_count = _count;
 
 	glGenBuffers(1, &iVBO);
@@ -17,11 +17,11 @@ void Sprites::init_sprites(float* translations, int _count) {
 	glVertexAttribDivisor(1, 1);
 }
 
-void Sprites::terminate_sprites() {
+void InstancedEntity::terminate_instances() {
 
 }
 
-void Sprites::instanced_render() {
+void InstancedEntity::instanced_render() {
 	glBindVertexArray(VAO);
 	glDrawElementsInstanced(GL_TRIANGLES, triangle_count * 3, GL_UNSIGNED_INT, 0, instance_count);
 }

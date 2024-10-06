@@ -1,10 +1,10 @@
 #include "entity.h"
 
-class Sprites: public Mesh {
+class InstancedEntity: public Mesh {
 public:
-	Sprites() {};
-	void init_sprites(float* instances, int instance_count);
-	void terminate_sprites();
+	InstancedEntity() {};
+	void init_instances(float* instances, int instance_count);
+	void terminate_instances();
 	void instanced_render();
 private:
 	int instance_count;
