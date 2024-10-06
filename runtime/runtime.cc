@@ -13,7 +13,7 @@
 #include "player.h"
 #include "../shared/debug.h"
 #include "dev.h"
-//#include "sprites.h"
+#include "foliage.h"
 #include "primitives.h"
 
 int width = 600;
@@ -32,7 +32,7 @@ Player player;
 Terrain terrain;
 Water water;
 
-//Sprites sprites;
+Grass grass;
 float translations[1000 * 1000 * 3] = {};
 
 void on_esc(double delta_time) {
@@ -135,12 +135,7 @@ void runtime::init(int chunk, float* heightmap, int heightmap_size) {
 		}
 	}
 
-	/*Transform t = Transform();
-	t.scale = glm::vec3(1, 2, 1);
-
-	sprites.init_entity(Program("instanced_v.glsl", "instanced_f.glsl"), &cam, t);
-	sprites.init_mesh(primitives::quad::vertices, 8, primitives::quad::indices, 4);
-	sprites.init_sprites(translations, ct / 3);*/
+	grass.init(&terrain, &cam);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -151,7 +146,9 @@ void runtime::init(int chunk, float* heightmap, int heightmap_size) {
 }
 
 void runtime::update(double delta_time) {
-	terrain.update(glm::vec2(in_player ? player.position.x : floating_camera.position.x, in_player ? player.position.z : floating_camera.position.z));
+	glm::vec2 cam_pos = glm::vec2(in_player ? player.position.x : floating_camera.position.x, in_player ? player.position.z : floating_camera.position.z);
+	terrain.update(cam_pos);
+	grass.update(cam_pos);
 	in_player ? player.update(width, height, delta_time) : floating_camera.update(width, height, delta_time);
 }
 
@@ -162,9 +159,8 @@ void runtime::render(double delta_time) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	glDisable(GL_CULL_FACE);
-	// TERRAIN
-	/*sprites.init_render();
-	sprites.instanced_render();*/
+
+	grass.render();
 
 	glEnable(GL_CULL_FACE);
 
