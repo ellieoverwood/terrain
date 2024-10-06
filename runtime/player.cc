@@ -114,9 +114,9 @@ void Player::update(int width, int height, double delta_time) {
 
 	float angle = glm::length(downward_slope);
 
-	bob_time += delta_time * glm::length(input_velocity) * 0.5;
+	bob_time += delta_time * glm::length(input_velocity) * 0.75;
 
-	if (angle > 0.3f) {
+	if (angle > 0.3f && underground() < 0.1) {
 		velocity += glm::normalize(downward_slope) * 20.0f * (float)delta_time * (angle - 0.3f);
 		//velocity.y -= 3;
 	}
@@ -126,11 +126,14 @@ void Player::update(int width, int height, double delta_time) {
 
 	velocity.x *= 1.0 - (delta_time * 3);
 	velocity.z *= 1.0 - (delta_time * 3);
-
-	if (fabs(velocity.x) < 0.01) velocity.x = 0;
-	if (fabs(velocity.z) < 0.01) velocity.z = 0;
-
+	
 	float ground = underground();
+
+	if (ground < 0.1) {
+		if (fabs(velocity.x) < 0.01) velocity.x = 0;
+		if (fabs(velocity.z) < 0.01) velocity.z = 0;
+	}
+
 	if (ground != 0.0 && velocity.y <= 0) {
 		position.y = ground;
 	}
@@ -142,7 +145,7 @@ void Player::update(int width, int height, double delta_time) {
 		}
 	}
 
-	fov_target = 45 + glm::length(input_velocity);
+	fov_target = 45 + (glm::length(input_velocity) / 1.5);
 
 	glm::vec3 hoff = glm::vec3(0, sin(bob_time), 0);
 

@@ -14,6 +14,8 @@
 #include "player.h"
 #include "../shared/debug.h"
 #include "dev.h"
+//#include "sprites.h"
+#include "primitives.h"
 
 int width = 600;
 int height = 400;
@@ -30,6 +32,9 @@ FloatingCamera floating_camera;
 Player player;
 TerrainRenderer terrain;
 Water water;
+
+//Sprites sprites;
+float translations[1000 * 1000 * 3] = {};
 
 void on_esc(double delta_time) {
 	runtime::terminate();
@@ -84,10 +89,7 @@ void runtime::init(int chunk) {
 	terrain.init(chunk, 20, 0.03, &cam);
 
 	floating_camera.init(width, height,
-		glm::vec3(
-			context.size * 10, 
-			terrain.height_at(context.size * 10, context.size * 10) + 20, 
-			context.size * 10),
+		glm::vec3(0, 0, 0),
 		glm::vec3(0.0f, 0.0f, -1.0f),
 		50, 3000,
 		75, 90,
@@ -101,7 +103,7 @@ void runtime::init(int chunk) {
 			terrain.height_at(context.size * 10, context.size * 10), 
 			context.size * 10),
 		glm::vec3(0.0f, 0.0f, -1.0f),
-		15, 30,
+		10, 20,
 		0.1,
 		&terrain
 	);
@@ -111,6 +113,34 @@ void runtime::init(int chunk) {
 
 	//DEBUG_LOG("%f", 
 	water.init(20 * context.size, &cam);
+
+	int ct = 0;
+
+	float x_start = context.size * 10;
+	float y_start = context.size * 10;
+
+	for (int iy = 0; iy < 500; iy ++) {
+		for (int ix = 0; ix < 500; ix ++) {
+			float x = x_start + ix;
+			float z = y_start + iy;
+			float y = terrain.height_at(x, z) / 2.0 - 1;
+			glm::vec3 norm = terrain.normal_at(x, z);
+			glm::vec3 downward_slope = glm::vec3(0, -1, 0) - glm::dot(glm::vec3(0, -1, 0), norm) * norm;
+			float angle = glm::length(downward_slope) * 1.8;
+			float r = rand() / (float)RAND_MAX;
+			if (r < angle) continue;
+			translations[ct++] = x;
+			translations[ct++] = y + 1;
+			translations[ct++] = z;
+		}
+	}
+
+	/*Transform t = Transform();
+	t.scale = glm::vec3(1, 2, 1);
+
+	sprites.init_entity(Program("instanced_v.glsl", "instanced_f.glsl"), &cam, t);
+	sprites.init_mesh(primitives::quad::vertices, 8, primitives::quad::indices, 4);
+	sprites.init_sprites(translations, ct / 3);*/
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -130,8 +160,13 @@ void runtime::render(double delta_time) {
 
 	glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
+	glDisable(GL_CULL_FACE);
 	// TERRAIN
+	/*sprites.init_render();
+	sprites.instanced_render();*/
+
+	glEnable(GL_CULL_FACE);
 
 	terrain.render();
 	water.render();

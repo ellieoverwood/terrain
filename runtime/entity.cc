@@ -51,6 +51,7 @@ void Entity::terminate_entity() {
 }
 
 void Mesh::init_mesh(float* vertices, unsigned int _vertex_count, unsigned int* indices, unsigned int _triangle_count) {
+
 	vertex_count = _vertex_count;
 	triangle_count = _triangle_count;
 
@@ -64,7 +65,6 @@ void Mesh::init_mesh(float* vertices, unsigned int _vertex_count, unsigned int* 
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
-
 }
 
 void Mesh::cycle_render() {

@@ -2,6 +2,7 @@
 #include "../shared/context.h"
 #include "platform.h"
 #include "../shared/debug.h"
+#include "primitives.h"
 
 #include <SDL_opengl.h>
 #include <math.h>
@@ -9,24 +10,16 @@
 void Water::init(int scale, Camera** cam) {
     #define DOWN_OFFSET -40.0f
 
-    float vertices[4 * 3] = {
-    	(float)scale, DOWN_OFFSET, (float)scale,
-	(float)scale, DOWN_OFFSET,  0,
-	0,            DOWN_OFFSET, (float)scale,
-	0,            DOWN_OFFSET,  0
-    };
+    Transform t = Transform();
+    t.scale = glm::vec3(scale, scale, scale);
 
-    unsigned int indices[6] = {
-	0, 1, 3,
-	0, 3, 2
-    };
+    init_entity(Program("water_v.glsl", "water_f.glsl"), cam, t);
 
-    init_entity(Program("water_v.glsl", "water_f.glsl"), cam, Transform());
-    init_mesh(vertices, 4, indices, 2);
+    init_mesh(primitives::plane::vertices, 4, primitives::plane::indices, 2);
 }
 
 void Water::render() {
-	trans.model.y = sin((float)platform::ticks() / 3000) * 10;
+	trans.model.y = DOWN_OFFSET + sin((float)platform::ticks() / 3000) * 10;
 	init_render();
 	cycle_render();
 }

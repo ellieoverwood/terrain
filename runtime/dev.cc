@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 bool wireframe_on = false;
+bool cull_faces   = true;
 
 void dev::update() {
 	bool active;
@@ -15,6 +16,15 @@ void dev::update() {
 			wireframe_on = !wireframe_on;
 			glPolygonMode(GL_FRONT_AND_BACK, wireframe_on ? GL_LINE : GL_FILL);
 		}
+
+		/*if (ImGui::Button("Toggle Culling")) {
+			cull_faces = !cull_faces;
+			if (cull_faces) {
+				glEnable(GL_CULL_FACE);	
+			} else {
+				glDisable(GL_CULL_FACE);
+			}
+		}*/
 	}
 
 	if (ImGui::CollapsingHeader("Performance")) {
