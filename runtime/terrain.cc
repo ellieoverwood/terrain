@@ -377,11 +377,8 @@ float Terrain::height_at(double x, double y) {
 }
 
 glm::vec3 Terrain::normal_at(double x, double y) {
-	x /= world_scale;
-	y /= world_scale;
-
-	int ix = x;
-	int iy = y;
+	int ix = x / world_scale;
+	int iy = y / world_scale;
 
 	float v1 = heightmap[iy*heightmap_size+ix];
 	float v2 = heightmap[iy*heightmap_size+(ix+1)];
@@ -394,7 +391,7 @@ glm::vec3 Terrain::normal_at(double x, double y) {
 	glm::vec3 b2 = glm::vec3(ix, v3, iy+1);
 	glm::vec3 b3 = glm::vec3(ix+1, v4, iy+1);
 
-	if (x < y) {
+	if ((x - ix * world_scale) < (y - iy * world_scale)) {
 		p1 = glm::vec3(ix, v1, iy);
 		p2 = glm::vec3(ix, v3, iy+1);
 		p3 = glm::vec3(ix+1, v4, iy+1);

@@ -67,7 +67,6 @@ void Grass::update(glm::vec2 cam_pos) {
 					int nx = x * chunk_size + ix;
 					int ny = y * chunk_size + iy;
 
-					printf("E\n");
 					float h = terrain->height_at(nx, ny);
 
 					arr[ct++] = nx;
