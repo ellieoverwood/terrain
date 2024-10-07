@@ -360,22 +360,20 @@ float weight(double x1, double y1, double x2, double y2) {
 }
 
 float Terrain::height_at(double x, double y) {
-	x /= world_scale;
-	y /= world_scale;
+	int ix = x / world_scale;
+	int iy = y / world_scale;
 
-	int ix = x;
-	int iy = y;
+	glm::vec3 bottom_left = glm::vec3(ix * world_scale, heightmap[iy*heightmap_size+ix] * world_scale, iy * world_scale);
+	glm::vec3 normal = normal_at(x, y);
+	glm::vec3 ray_origin = glm::vec3(x, 0, y);
+	glm::vec3 ray_direction = glm::vec3(0, 1, 0);
 
-	float v1 = heightmap[iy*heightmap_size+ix];
-	float v2 = heightmap[iy*heightmap_size+(ix+1)];
-	float v3 = heightmap[(iy+1)*heightmap_size+ix];
-	float v4 = heightmap[(iy+1)*heightmap_size+(ix+1)];
+	float denom = glm::dot(normal, ray_direction);
+	float t = glm::dot((bottom_left - ray_origin), normal) / denom;
 
-	float q1 = v1 * ((ix + 1) - x) + v2 * (x - ix);
-	float q2 = v3 * ((ix + 1) - x) + v4 * (x - ix);
-	float q = q1 * ((iy + 1) - y) + q2 * (y - iy);
+	glm::vec3 p = ray_origin + t * ray_direction;
 
-	return q * world_scale;
+	return p.y;
 }
 
 glm::vec3 Terrain::normal_at(double x, double y) {
