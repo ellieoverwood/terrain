@@ -1,6 +1,7 @@
 #include "foliage.h"
 #include "primitives.h"
 #include "shader.h"
+#include <algorithm>
 
 Program grass_program;
 
@@ -82,20 +83,18 @@ void Grass::update(glm::vec2 cam_pos) {
 		}
 	}
 
-	printf("%d\n", foliage.size());
-
 	int smallest_x = xp - 1;
 	int smallest_y = yp - 1;
 	int biggest_x = xp + 1;
 	int biggest_y = yp + 1;
 
-restart: // TODO: make this better
+	int f_size = foliage.size();
 
-	for (int i = 0; i < foliage.size(); i ++) {
-		if (foliage[i].x < smallest_x || foliage[i].x > biggest_x || foliage[i].y < smallest_y || foliage[i].y > biggest_y) {
-			foliage[i].terminate_instances();
-			foliage.erase(foliage.begin() + i);
-			goto restart;
+	for (int i = 0; i < f_size; i ++) {
+		int inv_i = (f_size - i) - 1;
+		if (foliage[inv_i].x < smallest_x || foliage[inv_i].x > biggest_x || foliage[inv_i].y < smallest_y || foliage[inv_i].y > biggest_y) {
+			foliage[inv_i].terminate_instances();
+			foliage.erase(foliage.begin() + inv_i);
 		}
 	}
 }
