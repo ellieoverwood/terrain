@@ -91,6 +91,7 @@ public:
 		return false;
 
 		// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf
+		// https://github.com/SebLague/Hydraulic-Erosion/blob/master/Assets/Scripts/Erosion.cs
 	}
 private:
 	glm::vec3 normal(int x, int y) {
