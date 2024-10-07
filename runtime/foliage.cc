@@ -36,10 +36,24 @@ void Grass::update(glm::vec2 cam_pos) {
 	last_x = xp;
 	last_y = yp;
 
-	for (int i = 0; i < 3; i ++) {
-		for (int j = 0; j < 3; j ++) {
-			int x = xp + i - 1;
-			int y = yp + j - 1;
+	int smallest_x = xp - 2;
+	int smallest_y = yp - 2;
+	int biggest_x = xp + 2;
+	int biggest_y = yp + 2;
+
+	int f_size = foliage.size();
+
+	for (int i = foliage.size() - 1; i >= 0; i--) {
+		if (foliage[i].x < smallest_x || foliage[i].x > biggest_x || foliage[i].y < smallest_y || foliage[i].y > biggest_y) {
+			foliage[i].terminate_instances();
+			foliage.erase(foliage.begin() + i);
+		}
+	}
+
+	for (int i = 0; i < 5; i ++) {
+		for (int j = 0; j < 5; j ++) {
+			int x = xp + i - 2;
+			int y = yp + j - 2;
 
 			if (x < 0 || y < 0) {
 				continue;
@@ -53,7 +67,7 @@ void Grass::update(glm::vec2 cam_pos) {
 				}
 			}
 
-			if (out_of_loop_flag) break;
+			if (out_of_loop_flag) continue;
 
 			foliage.push_back(FoliageChunk());
 			foliage.back().x = x;
@@ -67,11 +81,19 @@ void Grass::update(glm::vec2 cam_pos) {
 					int nx = x * chunk_size + ix;
 					int ny = y * chunk_size + iy;
 
+					glm::vec3 norm = terrain->normal_at(nx, ny);
+					float angle = glm::dot(norm, glm::vec3(0, 1, 0));
+
+					angle = fabs(angle);
+					angle -= 0.85;
+					angle *= 5;
+					if ((rand() / (float)RAND_MAX) > angle) continue;
+
 					float h = terrain->height_at(nx, ny);
 
-					arr[ct++] = nx;
+					arr[ct++] = nx + ((rand() / (float)RAND_MAX) - 0.5) * 3;
 					arr[ct++] = h;
-					arr[ct++] = ny;
+					arr[ct++] = ny + ((rand() / (float)RAND_MAX) - 0.5) * 3;
 				}
 			}
 
@@ -80,21 +102,6 @@ void Grass::update(glm::vec2 cam_pos) {
 			foliage.back().init_instances(arr, ct / 3.0);
 
 			free(arr);
-		}
-	}
-
-	int smallest_x = xp - 1;
-	int smallest_y = yp - 1;
-	int biggest_x = xp + 1;
-	int biggest_y = yp + 1;
-
-	int f_size = foliage.size();
-
-	for (int i = 0; i < f_size; i ++) {
-		int inv_i = (f_size - i) - 1;
-		if (foliage[inv_i].x < smallest_x || foliage[inv_i].x > biggest_x || foliage[inv_i].y < smallest_y || foliage[inv_i].y > biggest_y) {
-			foliage[inv_i].terminate_instances();
-			foliage.erase(foliage.begin() + inv_i);
 		}
 	}
 }
