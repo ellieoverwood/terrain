@@ -70,8 +70,8 @@ public:
 		grad.z = -(norm.x * norm.x) - (norm.y * norm.y);
 		grad = glm::normalize(grad);
 
-		dir.x = dir.x * inertia - (-grad.x) * (1 - inertia);
-		dir.y = dir.y * inertia - (-grad.y) * (1 - inertia);
+		dir.x = dir.x * inertia - grad.x * (1 - inertia);
+		dir.y = dir.y * inertia - grad.y * (1 - inertia);
 
 		int ix = (int)pos.x;
 		int iy = (int)pos.y;
@@ -86,8 +86,10 @@ public:
 
 		float c = std::max(-h_diff * vel * water * capacity, min_slope);
 		if (sediment > c || h_diff > 0) {
-			float drop = (h_diff > 0) ? std::min(h_diff, sediment) : (sediment - c) * deposition; 
+			float drop = (h_diff > 0) ? std::min(h_diff, sediment) : ((sediment - c) * deposition); 
 			sediment -= drop;
+
+			//printf("%f %f %d %d\n", offset_x, offset_y, ix, iy);
 
 				// billinear interpolation
 			heightmap[iy * size + ix] += drop * (1 - offset_x) * (1 - offset_y);
@@ -95,12 +97,12 @@ public:
 			heightmap[(iy+1) * size + ix] += drop * (1 - offset_x) * offset_y;
 			heightmap[(iy+1) * size + (ix+1)] += drop * offset_x * offset_y;
 		} else {
-			float take = std::min((c-sediment) * erosion_const, h_diff * -1);
+			float take = std::min((c-sediment) * erosion_const, -h_diff);
 			sediment += take;
-			terrain_changes.push_back((terrain_change){(int)pos.x, (int)pos.y, -take});
+			//terrain_changes.push_back((terrain_change){(int)p_old.x, (int)p_old.y, -take});
 		}
 
-		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));
+		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f)); // TODO: check this out
 		water *= (1 - evaporation);
 		
 		p_old.x = pos.x;
@@ -211,7 +213,7 @@ void erosion::simulate(
 						if (xpos < 0 || xpos >= size || ypos < 0 || ypos >= size) {
 							continue;
 						}
-						heightmap[ypos * size + xpos] += change.h;
+						//heightmap[ypos * size + xpos] += change.h;
 					}
 				}
 			}

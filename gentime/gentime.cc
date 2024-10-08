@@ -63,7 +63,7 @@ float* gentime::exec(int size) {
 		0.07, // evaporation,
 		7, // radius
 		15, // max_steps,
-		50, // drops_per_vertex
+		10, // drops_per_vertex
 		heightmap,
 		size
 	);
