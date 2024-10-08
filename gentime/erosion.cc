@@ -9,10 +9,14 @@ float deposition;
 float erosion_const;
 float gravity;
 float evaporation;
+int   radius;
+int   diameter;
 
 float* heightmap;
 int size;
 int area;
+
+float* brush;
 
 float* vertex_at(int x, int y) {
 	return &heightmap[y * size + x];
@@ -43,6 +47,7 @@ public:
 	float     water;
 	float     sediment;
 	glm::vec3 p_old;
+
 	bool erode() {
 		if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
 		if (heightmap[at()] <= 0) return true;
@@ -77,10 +82,22 @@ public:
 			if (sediment > c) {
 				float drop = (sediment - c) * deposition;
 				sediment -= drop;
-				heightmap[old_at()] += drop;
+
+				int ix = (int)pos.x;
+				int iy = (int)pos.y;
+
+				float offset_x = pos.x - ix;
+				float offset_y = pos.y - iy;
+
+				// billinear interpolation
+				heightmap[iy * size + ix] += drop * (1 - offset_x) * (1 - offset_y);
+				heightmap[iy * size + (ix+1)] += drop * offset_x * (1 - offset_y);
+				heightmap[(iy+1) * size + ix] += drop * (1 - offset_x) * offset_y;
+				heightmap[(iy+1) * size + (ix+1)] += drop * offset_x * offset_y;
 			} else {
 				float take = std::min((c-sediment) * erosion_const, h_diff * -1);
 				sediment += take;
+
 				heightmap[old_at()] -= take;
 			}
 		}
@@ -135,6 +152,7 @@ void erosion::simulate(
 		float _erosion,
 		float _gravity,
 		float _evaporation,
+		int   _radius,
 		int max_steps,
 		int drops_per_vertex,
 		float* _heightmap,
@@ -152,6 +170,27 @@ void erosion::simulate(
 	erosion_const = _erosion;
 	gravity = _gravity;
 	evaporation = _evaporation;
+	radius = _radius;
+
+	diameter = radius * 2;
+	brush = (float*)malloc(sizeof(float) * (diameter-1) * (diameter-1));
+	float weight_sum = 0;
+
+	for (int y = 0; y < diameter-1; y ++) {
+		for (int x = 0; x < diameter-1; x ++) {
+			float* at = &brush[y * (diameter-1) + x];
+			float dist = radius - sqrt(pow(radius - x, 2) + pow(radius - y, 2));
+			if (dist < 0) dist = 0;
+			*at = dist;
+			weight_sum += *at;
+			printf("%f ", *at);
+		}
+		printf("\n");
+	}
+	
+	for (int i = 0; i < (diameter-1) * (diameter-1); i ++) {
+		brush[i] /= weight_sum;
+	}
 
 	debug::bar::start("terrain erosion");
 

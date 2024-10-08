@@ -9,6 +9,7 @@ namespace erosion {
 		float erosion,
 		float gravity,
 		float evaporation,
+		int   radius,
 		int max_steps,
 		int drops_per_vertex,
 		float* heightmap,
