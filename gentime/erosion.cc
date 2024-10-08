@@ -69,20 +69,11 @@ float height() {
 }
 
 	bool erode() {
-
-if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
+		if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
 		if (heightmap[at()] <= 0) return true;
 
 		p_old.x = pos.x;
 		p_old.y = pos.y;
-
-		int node_x = (int)pos.x;
-		int node_y = (int)pos.y;
-
-		float cell_offset_x = pos.x - node_x;
-		float cell_offset_y = pos.y - node_y;
-
-		int droplet_index = node_y * size + node_x;
 
 		glm::vec3 norm = normal(pos.x, pos.y);
 		glm::vec3 grad;
@@ -97,40 +88,29 @@ if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true;
 		dir.x = dir.x * inertia - (-grad.x) * (1 - inertia);
 		dir.y = dir.y * inertia - (-grad.y) * (1 - inertia);
 
-		if (dir.x == 0 && dir.y == 0) return true;
-
 		float h_old = height();
 
 		pos += dir;
 
 		float h_new = height();
 
-		float h_diff = (h_new - h_old);
-
-		if (h_diff == 0) return true;
-
-		float c = std::max(-h_diff, min_slope) * vel * water * capacity;
+		float h_diff = h_old - h_new; // TODO: figure out why tf this isnt working ???
 
 		if (h_diff > 0) {
-			float drop = -glm::min(h_diff, sediment);
-
+			float drop = std::min(h_diff, sediment);
+			heightmap[old_at()] += drop;
 			sediment -= drop;
-
-			heightmap[droplet_index] += drop * (1 - cell_offset_x) * (1 - cell_offset_y);
-			heightmap[droplet_index+1] += drop * (cell_offset_x) * (1 - cell_offset_y);
-			heightmap[droplet_index+size] += drop * (1 - cell_offset_x) * (cell_offset_y);
-			heightmap[droplet_index+size+1] += drop * (cell_offset_x) * (cell_offset_y);
-		} else if (sediment > c) {
-			float drop = std::min((sediment - c) * deposition, -h_diff);
-			sediment -= drop;
-			heightmap[droplet_index] += drop * (1 - cell_offset_x) * (1 - cell_offset_y);
-			heightmap[droplet_index+1] += drop * (cell_offset_x) * (1 - cell_offset_y);
-			heightmap[droplet_index+size] += drop * (1 - cell_offset_x) * (cell_offset_y);
-			heightmap[droplet_index+size+1] += drop * (cell_offset_x) * (cell_offset_y);
 		} else {
-			float take = std::min((c-sediment) * erosion_const, -h_diff);
-			sediment += take;
-			heightmap[old_at()] -= take;
+			float c = std::max(h_diff*-1, min_slope) * vel * water * capacity;
+			if (sediment > c) {
+				float drop = (sediment - c) * deposition;
+				sediment -= drop;
+				heightmap[old_at()] += drop;
+			} else {
+				float take = std::min((c-sediment) * erosion_const, h_diff * -1);
+				sediment += take;
+				heightmap[old_at()] -= take;
+			}
 		}
 
 		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));

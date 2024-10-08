@@ -53,7 +53,7 @@ float* gentime::exec(int size) {
 
 	debug::bar::end();
 
-	erosion::simulate(
+	/*erosion::simulate(
 		0.2, // inertia,
 		0.001, // min_slope,
 		8.0, // capacity,
@@ -66,9 +66,9 @@ float* gentime::exec(int size) {
 		10, // drops_per_vertex
 		heightmap,
 		size
-	);
+	);*/
 
-	/*erosion::simulate(
+	erosion::simulate(
 		0.2, // inertia,
 		0.0001, // min_slope,
 		2.0, // capacity,
@@ -81,7 +81,7 @@ float* gentime::exec(int size) {
 		40, // drops_per_vertex
 		heightmap,
 		size
-	);*/
+	);
 
 	return heightmap;
 }
