@@ -1,6 +1,7 @@
 #include "erosion.h"
 #include "../shared/debug.h"
 #include "../include/glm/glm.hpp"
+#include <vector>
 
 float inertia;
 float min_slope;
@@ -17,6 +18,12 @@ int size;
 int area;
 
 float* brush;
+struct terrain_change {
+	int x, y;
+	float h;
+};
+
+std::vector<terrain_change> terrain_changes;
 
 float* vertex_at(int x, int y) {
 	return &heightmap[y * size + x];
@@ -73,33 +80,27 @@ public:
 		float h = heightmap[at()];
 		float h_diff = h - heightmap[old_at()];
 
-		if (h_diff > 0) {
-			float drop = std::min(h_diff, sediment);
-			heightmap[old_at()] += drop;
+		float c = std::max(h_diff * vel * water * capacity, min_slope);
+		if (sediment > c || h_diff > 0) {
+			float drop = (h_diff > 0) ? std::min(h_diff, sediment) : (sediment - c) * deposition; 
 			sediment -= drop;
-		} else {
-			float c = std::max(h_diff*-1, min_slope) * vel * water * capacity;
-			if (sediment > c) {
-				float drop = (sediment - c) * deposition;
-				sediment -= drop;
 
-				int ix = (int)pos.x;
-				int iy = (int)pos.y;
+			int ix = (int)pos.x;
+			int iy = (int)pos.y;
 
-				float offset_x = pos.x - ix;
-				float offset_y = pos.y - iy;
+			float offset_x = pos.x - ix;
+			float offset_y = pos.y - iy;
 
 				// billinear interpolation
-				heightmap[iy * size + ix] += drop * (1 - offset_x) * (1 - offset_y);
-				heightmap[iy * size + (ix+1)] += drop * offset_x * (1 - offset_y);
-				heightmap[(iy+1) * size + ix] += drop * (1 - offset_x) * offset_y;
-				heightmap[(iy+1) * size + (ix+1)] += drop * offset_x * offset_y;
-			} else {
-				float take = std::min((c-sediment) * erosion_const, h_diff * -1);
-				sediment += take;
-
-				heightmap[old_at()] -= take;
-			}
+			heightmap[iy * size + ix] += drop * (1 - offset_x) * (1 - offset_y);
+			heightmap[iy * size + (ix+1)] += drop * offset_x * (1 - offset_y);
+			heightmap[(iy+1) * size + ix] += drop * (1 - offset_x) * offset_y;
+			heightmap[(iy+1) * size + (ix+1)] += drop * offset_x * offset_y;
+		} else {
+			float take = std::min((c-sediment) * erosion_const, h_diff * -1);
+			sediment += take;
+			heightmap[(int)pos.y*size+(int)pos.x] -= take;
+			//terrain_changes.push_back((terrain_change){(int)pos.x, (int)pos.y, -take});
 		}
 
 		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));
@@ -173,17 +174,17 @@ void erosion::simulate(
 	radius = _radius;
 
 	diameter = radius * 2;
-	brush = (float*)malloc(sizeof(float) * (diameter-1) * (diameter-1));
+	brush = (float*)malloc(sizeof(float) * (diameter) * (diameter));
 	float weight_sum = 0;
 
-	for (int y = 0; y < diameter-1; y ++) {
-		for (int x = 0; x < diameter-1; x ++) {
-			float* at = &brush[y * (diameter-1) + x];
-			float dist = radius - sqrt(pow(radius - x, 2) + pow(radius - y, 2));
+	for (int y = 0; y < diameter; y ++) {
+		for (int x = 0; x < diameter; x ++) {
+			float dist = radius - sqrt(pow((radius - 0.5) - x, 2) + pow((radius - 0.5) - y, 2));
 			if (dist < 0) dist = 0;
-			*at = dist;
-			weight_sum += *at;
-			printf("%f ", *at);
+
+			brush[y * diameter + x] = dist;
+			printf("%f ", dist);
+			weight_sum += dist;
 		}
 		printf("\n");
 	}
@@ -200,10 +201,24 @@ void erosion::simulate(
 			for (int j = 0; j < max_steps; j ++) {
 				if (drop.erode()) break;
 			}
-		}
 
+
+			for (int j = 0; j < terrain_changes.size(); j ++) {
+				terrain_change change = terrain_changes[j];
+				for (int iy = 0; iy < diameter; iy ++) {
+					for (int ix = 0; ix < diameter; ix ++) {
+						int xpos = ix - (radius - 1) + change.x;
+						int ypos = iy - (radius - 1) + change.y;
+						if (xpos < 0 || xpos >= size || ypos < 0 || ypos >= size) {
+							continue;
+						}
+						heightmap[ypos * size + xpos] += change.h;
+					}
+				}
+			}
+			terrain_changes.clear();
+		}
 		debug::bar::step(ct);
 	}
-
 	debug::bar::end();
 }

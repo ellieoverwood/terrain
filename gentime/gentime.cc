@@ -23,12 +23,12 @@ float* gentime::exec(int size) {
 	for (int y = 0; y < size; y ++) {
 		debug::bar::step(((float)y / size) * 100.0);
 		for (int x = 0; x < size; x ++) {
-			float distance = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
+			/*float distance = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
 			float island = ((perlin::at(x / 500.0, y / 500.0) + 1) * distance * 10);
-			if (island < 0) island = 0;
+			if (island < 0) island = 0;*/
 
 			float mountains = 0;
-			float divisor = 400.0;
+			float divisor = 700.0;
 			float influence = 10.0;
 
 			for (int i = 0; i < 8; i ++) {
@@ -37,14 +37,15 @@ float* gentime::exec(int size) {
 				influence /= 2;
 			}
 
-			float val = mountains + island;
-			val -= 3;
+			float val = mountains;
+			//val -= 3;
 
-			float steepness = ((perlin::at(x / 700.0, y / 700.0) + 1)) - 0.5;
+			//float steepness = ((perlin::at(x / 700.0, y / 700.0) + 1)) - 0.5;
 			//if (steepness > 1) steepness = 1;
-			val *= steepness;
+			//val *= steepness;
 
-			val *= 16;
+			val += 3;
+			val *= 15;
 
 			heightmap[y*size+x] = val;
 		}
@@ -53,16 +54,16 @@ float* gentime::exec(int size) {
 	debug::bar::end();
 
 	erosion::simulate(
-		0.2, // inertia,
-		0.0001, // min_slope,
-		2.0, // capacity,
-		0.5, // deposition,
-		0.01, // erosion,
-		1.0, // gravity,
-		0.2, // evaporation,
-		5, // radius
+		0.1, // inertia,
+		0.001, // min_slope,
+		8.0, // capacity,
+		0.8, // deposition,
+		0.2, // erosion,
+		0.8, // gravity,
+		0.07, // evaporation,
+		7, // radius
 		15, // max_steps,
-		40, // drops_per_vertex
+		10, // drops_per_vertex
 		heightmap,
 		size
 	);
