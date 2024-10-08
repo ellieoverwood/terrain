@@ -55,10 +55,34 @@ public:
 	float     sediment;
 	glm::vec3 p_old;
 
+float height() {
+	float x = pos.x - (int)pos.x;
+	float y = pos.y - (int)pos.y;
+
+	int nodeIndexNW = (int)pos.y * size + (int)pos.x;
+    float heightNW = heightmap[nodeIndexNW];
+    float heightNE = heightmap[nodeIndexNW + 1];
+    float heightSW = heightmap[nodeIndexNW + size];
+    float heightSE = heightmap[nodeIndexNW + size + 1];
+
+    return heightNW * (1 - x) * (1 - y) + heightNE * x * (1 - y) + heightSW * (1 - x) * y + heightSE * x * y;
+}
+
 	bool erode() {
 
-		if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
+if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
 		if (heightmap[at()] <= 0) return true;
+
+		p_old.x = pos.x;
+		p_old.y = pos.y;
+
+		int node_x = (int)pos.x;
+		int node_y = (int)pos.y;
+
+		float cell_offset_x = pos.x - node_x;
+		float cell_offset_y = pos.y - node_y;
+
+		int droplet_index = node_y * size + node_x;
 
 		glm::vec3 norm = normal(pos.x, pos.y);
 		glm::vec3 grad;
@@ -70,44 +94,48 @@ public:
 		grad.z = -(norm.x * norm.x) - (norm.y * norm.y);
 		grad = glm::normalize(grad);
 
-		dir.x = dir.x * inertia - grad.x * (1 - inertia);
-		dir.y = dir.y * inertia - grad.y * (1 - inertia);
+		dir.x = dir.x * inertia - (-grad.x) * (1 - inertia);
+		dir.y = dir.y * inertia - (-grad.y) * (1 - inertia);
 
-		int ix = (int)pos.x;
-		int iy = (int)pos.y;
+		if (dir.x == 0 && dir.y == 0) return true;
 
-		float offset_x = pos.x - ix;
-		float offset_y = pos.y - iy;
+		float h_old = height();
 
 		pos += dir;
 
-		float h = heightmap[at()];
-		float h_diff = h - heightmap[old_at()];
+		float h_new = height();
 
-		float c = std::max(-h_diff * vel * water * capacity, min_slope);
-		if (sediment > c || h_diff > 0) {
-			float drop = (h_diff > 0) ? std::min(h_diff, sediment) : ((sediment - c) * deposition); 
+		float h_diff = (h_new - h_old);
+
+		if (h_diff == 0) return true;
+
+		float c = std::max(-h_diff, min_slope) * vel * water * capacity;
+
+		if (h_diff > 0) {
+			float drop = -glm::min(h_diff, sediment);
+
 			sediment -= drop;
 
-			//printf("%f %f %d %d\n", offset_x, offset_y, ix, iy);
-
-				// billinear interpolation
-			heightmap[iy * size + ix] += drop * (1 - offset_x) * (1 - offset_y);
-			heightmap[iy * size + (ix+1)] += drop * offset_x * (1 - offset_y);
-			heightmap[(iy+1) * size + ix] += drop * (1 - offset_x) * offset_y;
-			heightmap[(iy+1) * size + (ix+1)] += drop * offset_x * offset_y;
+			heightmap[droplet_index] += drop * (1 - cell_offset_x) * (1 - cell_offset_y);
+			heightmap[droplet_index+1] += drop * (cell_offset_x) * (1 - cell_offset_y);
+			heightmap[droplet_index+size] += drop * (1 - cell_offset_x) * (cell_offset_y);
+			heightmap[droplet_index+size+1] += drop * (cell_offset_x) * (cell_offset_y);
+		} else if (sediment > c) {
+			float drop = std::min((sediment - c) * deposition, -h_diff);
+			sediment -= drop;
+			heightmap[droplet_index] += drop * (1 - cell_offset_x) * (1 - cell_offset_y);
+			heightmap[droplet_index+1] += drop * (cell_offset_x) * (1 - cell_offset_y);
+			heightmap[droplet_index+size] += drop * (1 - cell_offset_x) * (cell_offset_y);
+			heightmap[droplet_index+size+1] += drop * (cell_offset_x) * (cell_offset_y);
 		} else {
 			float take = std::min((c-sediment) * erosion_const, -h_diff);
 			sediment += take;
-			//terrain_changes.push_back((terrain_change){(int)p_old.x, (int)p_old.y, -take});
+			heightmap[old_at()] -= take;
 		}
 
-		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f)); // TODO: check this out
+		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));
 		water *= (1 - evaporation);
 		
-		p_old.x = pos.x;
-		p_old.y = pos.y;
-
 		return false;
 
 		// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf
