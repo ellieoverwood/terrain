@@ -56,7 +56,68 @@ public:
 	glm::vec3 p_old;
 
 	bool erode() {
+
 		if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
+		if (heightmap[at()] <= 0) return true;
+
+		p_old.x = pos.x;
+		p_old.y = pos.y;
+
+		glm::vec3 norm = normal(pos.x, pos.y);
+		glm::vec3 grad;
+
+		if (norm.x == 0 || norm.y == 0) return true;
+
+		grad.x = norm.x * norm.z;
+		grad.y = norm.y * norm.z;
+		grad.z = -(norm.x * norm.x) - (norm.y * norm.y);
+		grad = glm::normalize(grad);
+
+		dir.x = dir.x * inertia - (-grad.x) * (1 - inertia);
+		dir.y = dir.y * inertia - (-grad.y) * (1 - inertia);
+
+		pos += dir;
+
+		float h = heightmap[at()];
+		float h_diff = h - heightmap[old_at()];
+
+			int ix = (int)pos.x;
+			int iy = (int)pos.y;
+
+			float offset_x = pos.x - ix;
+			float offset_y = pos.y - iy;
+
+
+
+		float c = std::max(h_diff * vel * water * capacity, min_slope);
+		if (sediment > c || h_diff > 0) {
+			float drop = (h_diff > 0) ? std::min(h_diff, sediment) : (sediment - c) * deposition; 
+			sediment -= drop;
+
+			int ix = (int)pos.x;
+			int iy = (int)pos.y;
+
+			float offset_x = pos.x - ix;
+			float offset_y = pos.y - iy;
+
+				// billinear interpolation
+			heightmap[iy * size + ix] += drop * (1 - offset_x) * (1 - offset_y);
+			heightmap[iy * size + (ix+1)] += drop * offset_x * (1 - offset_y);
+			heightmap[(iy+1) * size + ix] += drop * (1 - offset_x) * offset_y;
+			heightmap[(iy+1) * size + (ix+1)] += drop * offset_x * offset_y;
+		} else {
+			float take = std::min((c-sediment) * erosion_const, h_diff * -1);
+			sediment += take;
+			terrain_changes.push_back((terrain_change){(int)pos.x, (int)pos.y, -take});
+		}
+
+		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));
+		water *= (1 - evaporation);
+		
+		return false;
+
+
+		/*if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
 		if (heightmap[at()] <= 0) return true;
 
 		p_old.x = pos.x;
@@ -106,7 +167,7 @@ public:
 		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));
 		water *= (1 - evaporation);
 		
-		return false;
+		return false;*/
 
 		// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf
 		// https://github.com/SebLague/Hydraulic-Erosion/blob/master/Assets/Scripts/Erosion.cs
