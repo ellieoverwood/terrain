@@ -55,6 +55,12 @@ public:
 	float     sediment;
 	glm::vec3 p_old;
 
+	struct height_grad {
+		float grad_x;
+		float grad_y;
+		float height;
+	};
+
 float height() {
 	float x = pos.x - (int)pos.x;
 	float y = pos.y - (int)pos.y;
@@ -68,55 +74,41 @@ float height() {
     return heightNW * (1 - x) * (1 - y) + heightNE * x * (1 - y) + heightSW * (1 - x) * y + heightSE * x * y;
 }
 
+height_grad height_and_grad() {
+		float xoff = pos.x - (int)pos.x;
+		float yoff = pos.y - (int)pos.y;
+
+		int node_index = (int)pos.y * size + (int)pos.x;
+		float height_NW = heightmap[node_index];
+		float height_NE = heightmap[node_index + 1];
+		float height_SW = heightmap[node_index + size];
+		float height_SE = heightmap[node_index + size + 1];
+
+		float gradient_x = (height_NE - height_NW) * (1 - yoff) + (height_SE - height_SW) * yoff;
+		float gradient_y = (height_SW - height_NW) * (1 - xoff) + (height_SE - height_NE) * xoff;
+
+		float height = height_NW * (1 - xoff) * (1 - yoff) + height_NE * xoff * (1 - yoff) * height_SW * (1 - xoff) * yoff + height_SE * xoff * yoff;
+
+		return (height_grad){gradient_x, gradient_y, height};
+}
+
 	bool erode() {
-		if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
-		if (heightmap[at()] <= 0) return true;
+		int node_x = (int)pos.x;
+		int node_y = (int)pos.y;
 
-		p_old.x = pos.x;
-		p_old.y = pos.y;
+		float xoff = pos.x - node_x;
+		float yoff = pos.y - node_y;
 
-		glm::vec3 norm = normal(pos.x, pos.y);
-		glm::vec3 grad;
+		int node_index = (int)pos.y * size + (int)pos.x;
+		float height_NW = heightmap[node_index];
+		float height_NE = heightmap[node_index + 1];
+		float height_SW = heightmap[node_index + size];
+		float height_SE = heightmap[node_index + size + 1];
 
-		if (norm.x == 0 || norm.y == 0) return true;
+		float gradient_x = (height_NE - height_NW) * (1 - yoff) + (height_SE - height_SW) * yoff;
+		float gradient_y = (height_SW - height_NW) * (1 - xoff) + (height_SE - height_NE) * xoff;
 
-		grad.x = norm.x * norm.z;
-		grad.y = norm.y * norm.z;
-		grad.z = -(norm.x * norm.x) - (norm.y * norm.y);
-		grad = glm::normalize(grad);
-
-		dir.x = dir.x * inertia - (-grad.x) * (1 - inertia);
-		dir.y = dir.y * inertia - (-grad.y) * (1 - inertia);
-
-		float h_old = height();
-
-		pos += dir;
-
-		float h_new = height();
-
-		float h_diff = h_old - h_new; // TODO: figure out why tf this isnt working ???
-
-		if (h_diff > 0) {
-			float drop = std::min(h_diff, sediment);
-			heightmap[old_at()] += drop;
-			sediment -= drop;
-		} else {
-			float c = std::max(h_diff*-1, min_slope) * vel * water * capacity;
-			if (sediment > c) {
-				float drop = (sediment - c) * deposition;
-				sediment -= drop;
-				heightmap[old_at()] += drop;
-			} else {
-				float take = std::min((c-sediment) * erosion_const, h_diff * -1);
-				sediment += take;
-				heightmap[old_at()] -= take;
-			}
-		}
-
-		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));
-		water *= (1 - evaporation);
-		
-		return false;
+		float height = height_NW * (1 - xoff) * (1 - yoff) + height_NE * xoff * (1 - yoff) * height_SW * (1 - xoff) * yoff + height_SE * xoff * yoff;
 
 		// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf
 		// https://github.com/SebLague/Hydraulic-Erosion/blob/master/Assets/Scripts/Erosion.cs
