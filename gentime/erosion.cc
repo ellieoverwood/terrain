@@ -93,25 +93,56 @@ height_grad height_and_grad() {
 }
 
 	bool erode() {
-		int node_x = (int)pos.x;
+		/*int node_x = (int)pos.x;
 		int node_y = (int)pos.y;
 
 		float xoff = pos.x - node_x;
 		float yoff = pos.y - node_y;
 
-		int node_index = (int)pos.y * size + (int)pos.x;
-		float height_NW = heightmap[node_index];
-		float height_NE = heightmap[node_index + 1];
-		float height_SW = heightmap[node_index + size];
-		float height_SE = heightmap[node_index + size + 1];
+		height_grad hg = height_and_grad();*/
 
-		float gradient_x = (height_NE - height_NW) * (1 - yoff) + (height_SE - height_SW) * yoff;
-		float gradient_y = (height_SW - height_NW) * (1 - xoff) + (height_SE - height_NE) * xoff;
+	if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
+		if (heightmap[at()] <= 0) return true;
 
-		float height = height_NW * (1 - xoff) * (1 - yoff) + height_NE * xoff * (1 - yoff) * height_SW * (1 - xoff) * yoff + height_SE * xoff * yoff;
+		p_old.x = pos.x;
+		p_old.y = pos.y;
 
-		// https://www.firespark.de/resources/downloads/implementation%20of%20a%20methode%20for%20hydraulic%20erosion.pdf
-		// https://github.com/SebLague/Hydraulic-Erosion/blob/master/Assets/Scripts/Erosion.cs
+		height_grad hg = height_and_grad();
+
+		//DEBUG_LOG("%f %f", hg.grad_x, hg.grad_y);
+
+		glm::vec2 grad = -glm::normalize(glm::vec2(hg.grad_x, hg.grad_y));
+
+
+		dir.x = dir.x * inertia - (-grad.x) * (1 - inertia);
+		dir.y = dir.y * inertia - (-grad.y) * (1 - inertia);
+
+		pos += dir;
+
+		float h = heightmap[at()];
+		float h_diff = h - heightmap[old_at()];
+
+		if (h_diff > 0) {
+			float drop = std::min(h_diff, sediment);
+			heightmap[old_at()] += drop;
+			sediment -= drop;
+		} else {
+			float c = std::max(h_diff*-1, min_slope) * vel * water * capacity;
+			if (sediment > c) {
+				float drop = (sediment - c) * deposition;
+				sediment -= drop;
+				heightmap[old_at()] += drop;
+			} else {
+				float take = std::min((c-sediment) * erosion_const, h_diff * -1);
+				sediment += take;
+				heightmap[old_at()] -= take;
+			}
+		}
+
+		vel = (float)sqrt(std::max((vel * vel + h_diff * gravity), 1.0f));
+		water *= (1 - evaporation);
+		
+		return false;
 	}
 private:
 	glm::vec3 normal(int x, int y) {
