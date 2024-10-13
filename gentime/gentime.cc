@@ -44,7 +44,6 @@ float* gentime::exec(int size) {
 			if (steepness > 1) steepness = 1;
 			val *= steepness;
 
-			val += 3;
 			val *= 15;
 
 			heightmap[y*size+x] = val;
@@ -53,7 +52,7 @@ float* gentime::exec(int size) {
 
 	debug::bar::end();
 
-	/*erosion::simulate(
+	erosion::simulate(
 		0.25, // inertia,
 		0.01, // min_slope,
 		8.0, // capacity,
@@ -81,7 +80,7 @@ float* gentime::exec(int size) {
 		10, // drops_per_vertex
 		heightmap,
 		size
-	);*/
+	);
 
 	return heightmap;
 }
