@@ -122,7 +122,7 @@ height_grad height_and_grad() {
 		float h_diff_new = hg_lookahead.height - hg.height;
 		float h_diff_old = heightmap[at()] - heightmap[node_y * size + node_x];
 
-		float h_diff = h_diff_old;
+		float h_diff = h_diff_new;
 		if (h_diff == 0) return true;
 
 		//DEBUG_LOG("%f -> %f : %f %f -> %f %f", h_diff_old, h_diff_new, p_old.x, p_old.y, pos.x, pos.y);
@@ -251,12 +251,12 @@ void erosion::simulate(
 			for (int change_ct = 0; change_ct < terrain_changes.size(); change_ct ++) {
 				terrain_change change = terrain_changes[change_ct];
 				//printf("================\n");
-				for (int brush_y = radius - 1; brush_y < radius + 1; brush_y ++) {
-					for (int brush_x = radius - 1; brush_x < radius + 1; brush_x ++) {
+				for (int brush_y = 0; brush_y < diameter; brush_y ++) {
+					for (int brush_x = 0; brush_x < diameter; brush_x ++) {
 						int total_x = (brush_x - radius) + change.x;
 						int total_y = (brush_y - radius) + change.y;
 						if (!(total_x < 0 || total_x >= size || total_y < 0 || total_y >= size)) {
-							float weight = 1;
+							float weight = brush[brush_y * diameter + brush_x];
 							float delta = change.h * weight;
 							//printf("[(%d %d:%d) %f] ", total_x, total_y,(total_y * size + total_x), delta);
 							heightmap[total_y * size + total_x] += delta;
