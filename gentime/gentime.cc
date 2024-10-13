@@ -73,7 +73,7 @@ float* gentime::exec(int size) {
 		0.0001, // min_slope,
 		2.0, // capacity,
 		0.5, // deposition,
-		0.01, // erosion,
+		0.015, // erosion,
 		1.0, // gravity,
 		0.2, // evaporation,
 		3,   // radius

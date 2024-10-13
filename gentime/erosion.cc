@@ -43,8 +43,6 @@ public:
 		dir.y = (rand() / (float)RAND_MAX);
 		dir = glm::normalize(dir);
 		sediment = 0;
-		p_old.x = pos.x;
-		p_old.y = pos.y;
 		vel = 3;
 		water = 1;
 	}
@@ -53,7 +51,6 @@ public:
 	float     vel;
 	float     water;
 	float     sediment;
-	glm::vec3 p_old;
 
 	struct height_grad {
 		float grad_x;
@@ -100,10 +97,9 @@ height_grad height_and_grad() {
 	if (pos.x < 2 || pos.x > size - 2 || pos.y < 2 || pos.y > size - 2) return true; // TODO: fix eh maybe
 		if (heightmap[at()] <= 0) return true;
 
-		p_old.x = pos.x;
-		p_old.y = pos.y;
-
 		int drop_index = (int)pos.y * size + (int)pos.x;
+		int node_x = (int)pos.x;
+		int node_y = (int)pos.y;
 		float xoff = pos.x - (int)pos.x;
 		float yoff = pos.y - (int)pos.y;
 
@@ -124,7 +120,7 @@ height_grad height_and_grad() {
 		height_grad hg_lookahead = height_and_grad();
 
 		float h_diff_new = hg_lookahead.height - hg.height;
-		float h_diff_old = heightmap[at()] - heightmap[old_at()];
+		float h_diff_old = heightmap[at()] - heightmap[node_y * size + node_x];
 
 		float h_diff = h_diff_old;
 		if (h_diff == 0) return true;
@@ -154,7 +150,8 @@ height_grad height_and_grad() {
 			} else {
 				float take = std::min((c-sediment) * erosion_const, h_diff * -1);
 				sediment += take;
-				heightmap[old_at()] -= take;
+				//heightmap[node_y * size + node_x] -= take;
+				terrain_changes.push_back((terrain_change){node_x, node_y, -take});
 			}
 		}
 
@@ -191,9 +188,6 @@ private:
 	}
 	int at() {
 		return (int)(pos.y) * size + (int)(pos.x);
-	}
-	int old_at() {
-		return (int)(p_old.y) * size + (int)(p_old.x);
 	}
 };
 
@@ -241,7 +235,7 @@ void erosion::simulate(
 		printf("\n");
 	}
 	
-	for (int i = 0; i < (diameter-1) * (diameter-1); i ++) {
+	for (int i = 0; i < diameter * diameter; i ++) {
 		brush[i] /= weight_sum;
 	}
 
@@ -254,18 +248,23 @@ void erosion::simulate(
 				if (drop.erode()) break;
 			}
 
-			for (int j = 0; j < terrain_changes.size(); j ++) {
-				terrain_change change = terrain_changes[j];
-				for (int iy = 0; iy < diameter; iy ++) {
-					for (int ix = 0; ix < diameter; ix ++) {
-						int xpos = ix - (radius) + change.x;
-						int ypos = iy - (radius) + change.y;
-						if (xpos < 0 || xpos >= size || ypos < 0 || ypos >= size) {
-							continue;
+			for (int change_ct = 0; change_ct < terrain_changes.size(); change_ct ++) {
+				terrain_change change = terrain_changes[change_ct];
+				//printf("================\n");
+				for (int brush_y = radius - 1; brush_y < radius + 1; brush_y ++) {
+					for (int brush_x = radius - 1; brush_x < radius + 1; brush_x ++) {
+						int total_x = (brush_x - radius) + change.x;
+						int total_y = (brush_y - radius) + change.y;
+						if (!(total_x < 0 || total_x >= size || total_y < 0 || total_y >= size)) {
+							float weight = 1;
+							float delta = change.h * weight;
+							//printf("[(%d %d:%d) %f] ", total_x, total_y,(total_y * size + total_x), delta);
+							heightmap[total_y * size + total_x] += delta;
 						}
-						//heightmap[ypos * size + xpos] += change.h;
 					}
+					//printf("\n");
 				}
+				//heightmap[change.y * size + change.x] += change.h;
 			}
 			terrain_changes.clear();
 		}
