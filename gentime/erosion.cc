@@ -61,19 +61,6 @@ public:
 		float height;
 	};
 
-float height() {
-	float x = pos.x - (int)pos.x;
-	float y = pos.y - (int)pos.y;
-
-	int nodeIndexNW = (int)pos.y * size + (int)pos.x;
-    float heightNW = heightmap[nodeIndexNW];
-    float heightNE = heightmap[nodeIndexNW + 1];
-    float heightSW = heightmap[nodeIndexNW + size];
-    float heightSE = heightmap[nodeIndexNW + size + 1];
-
-    return heightNW * (1 - x) * (1 - y) + heightNE * x * (1 - y) + heightSW * (1 - x) * y + heightSE * x * y;
-}
-
 height_grad height_and_grad() {
 		float xoff = pos.x - (int)pos.x;
 		float yoff = pos.y - (int)pos.y;
@@ -87,7 +74,16 @@ height_grad height_and_grad() {
 		float gradient_x = (height_NE - height_NW) * (1 - yoff) + (height_SE - height_SW) * yoff;
 		float gradient_y = (height_SW - height_NW) * (1 - xoff) + (height_SE - height_NE) * xoff;
 
-		float height = height_NW * (1 - xoff) * (1 - yoff) + height_NE * xoff * (1 - yoff) * height_SW * (1 - xoff) * yoff + height_SE * xoff * yoff;
+		//xoff = 1 - xoff;
+		//yoff = 1 - yoff;
+
+		float height = 
+			height_NW * (1 - xoff) * (1 - yoff) + 
+			height_NE * xoff * (1 - yoff) + 
+			height_SW * (1 - xoff) * yoff + 
+			height_SE * xoff * yoff;
+
+		//DEBUG_LOG("%f %f %f %f : %f %f : %f", height_NW, height_NE, height_SW, height_SE, xoff, yoff, height);
 
 		return (height_grad){gradient_x, gradient_y, height};
 }
@@ -107,31 +103,54 @@ height_grad height_and_grad() {
 		p_old.x = pos.x;
 		p_old.y = pos.y;
 
+		int drop_index = (int)pos.y * size + (int)pos.x;
+		float xoff = pos.x - (int)pos.x;
+		float yoff = pos.y - (int)pos.y;
+
 		height_grad hg = height_and_grad();
 
 		//DEBUG_LOG("%f %f", hg.grad_x, hg.grad_y);
 
-		glm::vec2 grad = -glm::normalize(glm::vec2(hg.grad_x, hg.grad_y));
+		glm::vec2 grad = glm::vec2(hg.grad_x, hg.grad_y);
 
+		dir.x = dir.x * inertia - grad.x * (1 - inertia);
+		dir.y = dir.y * inertia - grad.y * (1 - inertia);
 
-		dir.x = dir.x * inertia - (-grad.x) * (1 - inertia);
-		dir.y = dir.y * inertia - (-grad.y) * (1 - inertia);
+		if (glm::length(dir) < 0.01) return true;
+		dir = glm::normalize(dir);
 
 		pos += dir;
 
-		float h = heightmap[at()];
-		float h_diff = h - heightmap[old_at()];
+		height_grad hg_lookahead = height_and_grad();
+
+		float h_diff_new = hg_lookahead.height - hg.height;
+		float h_diff_old = heightmap[at()] - heightmap[old_at()];
+
+		float h_diff = h_diff_old;
+		if (h_diff == 0) return true;
+
+		//DEBUG_LOG("%f -> %f : %f %f -> %f %f", h_diff_old, h_diff_new, p_old.x, p_old.y, pos.x, pos.y);
 
 		if (h_diff > 0) {
 			float drop = std::min(h_diff, sediment);
-			heightmap[old_at()] += drop;
+
+			heightmap[drop_index] += drop * (1 - xoff) * (1 - yoff);
+			heightmap[drop_index + 1] += drop * xoff * (1 - yoff);
+			heightmap[drop_index + size] += drop * (1 - xoff) * yoff;
+			heightmap[drop_index + size + 1] += drop * xoff * yoff;
+
 			sediment -= drop;
 		} else {
 			float c = std::max(h_diff*-1, min_slope) * vel * water * capacity;
 			if (sediment > c) {
 				float drop = (sediment - c) * deposition;
+
 				sediment -= drop;
-				heightmap[old_at()] += drop;
+
+				heightmap[drop_index] += drop * (1 - xoff) * (1 - yoff);
+				heightmap[drop_index + 1] += drop * xoff * (1 - yoff);
+				heightmap[drop_index + size] += drop * (1 - xoff) * yoff;
+				heightmap[drop_index + size + 1] += drop * xoff * yoff;
 			} else {
 				float take = std::min((c-sediment) * erosion_const, h_diff * -1);
 				sediment += take;
