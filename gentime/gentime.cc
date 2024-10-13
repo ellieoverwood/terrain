@@ -23,13 +23,16 @@ float* gentime::exec(int size) {
 	for (int y = 0; y < size; y ++) {
 		debug::bar::step(((float)y / size) * 100.0);
 		for (int x = 0; x < size; x ++) {
-			float distance = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
-			float island = ((perlin::at(x / 500.0, y / 500.0) + 1) * distance * 10);
+			float falloff = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
+			/*float island = ((perlin::at(x / 500.0, y / 500.0) + 1) * distance * 10);
 			if (island < 0) island = 0;
+			*/
 
 			float mountains = 0;
-			float divisor = 700.0;
-			float influence = 10.0;
+			float divisor = 300.0;
+			float influence = 1.0;
+
+
 
 			for (int i = 0; i < 8; i ++) {
 				mountains += (perlin::at(x / divisor, y / divisor)) * influence;
@@ -37,14 +40,16 @@ float* gentime::exec(int size) {
 				influence /= 2;
 			}
 
-			float val = mountains + island;
-			val -= 3;
+			float val = mountains;
+			val -= 0.1;
+			val += falloff;
+			val *= 50;
 
-			float steepness = ((perlin::at(x / 700.0, y / 700.0) + 1)) - 0.5;
+			/*float steepness = ((perlin::at(x / 700.0, y / 700.0) + 1)) - 0.5;
 			if (steepness > 1) steepness = 1;
 			val *= steepness;
 
-			val *= 15;
+			val *= 15;*/
 
 			heightmap[y*size+x] = val;
 		}
@@ -53,26 +58,26 @@ float* gentime::exec(int size) {
 	debug::bar::end();
 
 	erosion::simulate(
-		0.25, // inertia,
-		0.01, // min_slope,
-		8.0, // capacity,
-		0.1, // deposition,
+		0.1, // inertia,
+		0.001, // min_slope,
+		15.0, // capacity,
+		0.5, // deposition,
 		0.1, // erosion,
-		0.5, // gravity,
+		0.1, // gravity,
 		0.05, // evaporation,
-		6,   // radius
+		15,   // radius
 		15, // max_steps,
-		1, // drops_per_vertex
+		3, // drops_per_vertex
 		heightmap,
 		size
 	);
 
-	erosion::simulate(
+	/*erosion::simulate(
 		0.25, // inertia,
 		0.01, // min_slope,
 		2.0, // capacity,
-		0.3, // deposition,
-		0.03, // erosion,
+		0.1, // deposition,
+		0.1, // erosion,
 		0.5, // gravity,
 		0.05, // evaporation,
 		1,   // radius
@@ -80,7 +85,7 @@ float* gentime::exec(int size) {
 		10, // drops_per_vertex
 		heightmap,
 		size
-	);
+	);*/
 
 	return heightmap;
 }
