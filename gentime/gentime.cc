@@ -23,7 +23,7 @@ float* gentime::exec(int size) {
 	for (int y = 0; y < size; y ++) {
 		debug::bar::step(((float)y / size) * 100.0);
 		for (int x = 0; x < size; x ++) {
-			//float falloff = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
+			float falloff = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
 			/*float island = ((perlin::at(x / 500.0, y / 500.0) + 1) * distance * 10);
 			if (island < 0) island = 0;
 			*/
@@ -41,9 +41,9 @@ float* gentime::exec(int size) {
 			}
 
 			float val = mountains;
-			val += 0.2;
-			//val += falloff;
-			val *= 100;
+			val -= 0.2;
+			val += falloff;
+			val *= 80;
 
 			/*float steepness = ((perlin::at(x / 700.0, y / 700.0) + 1)) - 0.5;
 			if (steepness > 1) steepness = 1;
@@ -87,6 +87,8 @@ float* gentime::exec(int size) {
 		size
 	);*/
 
+	debug::save_heightmap("a.bmp", size, heightmap);
+
 	erosion::simulate(
 		0.025, // inertia,
 		0.0001, // min_slope,
@@ -102,7 +104,9 @@ float* gentime::exec(int size) {
 		size
 	);
 
-	erosion::simulate(
+	debug::save_heightmap("b.bmp", size, heightmap);
+
+	/*erosion::simulate(
 		0.025, // inertia,
 		0.01, // min_slope,
 		2.0, // capacity,
@@ -110,12 +114,14 @@ float* gentime::exec(int size) {
 		0.05, // erosion,
 		0.2, // gravity,
 		0.05, // evaporation,
-		1,   // radius
+		10,   // radius
 		10, // max_steps,
-		1, // drops_per_vertex
+		30, // drops_per_vertex
 		heightmap,
 		size
 	);
+
+	debug::save_heightmap("c.bmp", size, heightmap);*/
 
 	return heightmap;
 }

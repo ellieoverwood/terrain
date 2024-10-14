@@ -10,6 +10,8 @@ long last_time;
 int dev::fps;
 
 void runtime::exec(int chunk, float* heightmap, int size) {
+	debug::save_heightmap("d.bmp", size, heightmap);
+
 	init(chunk, heightmap, size);
 
 	last_time = platform::ticks() / 1000.0;

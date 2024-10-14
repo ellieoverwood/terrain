@@ -17,4 +17,5 @@ namespace debug {
 		void step (float percent);
 		void end();
 	}
+	void save_heightmap(char* file, int size, float* data);
 }

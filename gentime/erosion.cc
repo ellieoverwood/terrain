@@ -1,6 +1,7 @@
 #include "erosion.h"
 #include "../shared/debug.h"
 #include "../include/glm/glm.hpp"
+#include "../shared/util.h"
 #include <vector>
 
 float inertia;
@@ -71,16 +72,7 @@ height_grad height_and_grad() {
 		float gradient_x = (height_NE - height_NW) * (1 - yoff) + (height_SE - height_SW) * yoff;
 		float gradient_y = (height_SW - height_NW) * (1 - xoff) + (height_SE - height_NE) * xoff;
 
-		//xoff = 1 - xoff;
-		//yoff = 1 - yoff;
-
-		float height = 
-			height_NW * (1 - xoff) * (1 - yoff) + 
-			height_NE * xoff * (1 - yoff) + 
-			height_SW * (1 - xoff) * yoff + 
-			height_SE * xoff * yoff;
-
-		//DEBUG_LOG("%f %f %f %f : %f %f : %f", height_NW, height_NE, height_SW, height_SE, xoff, yoff, height);
+		float height = util::bilerp(height_NW, height_NE, height_SW, height_SE, xoff, yoff);
 
 		return (height_grad){gradient_x, gradient_y, height};
 }
