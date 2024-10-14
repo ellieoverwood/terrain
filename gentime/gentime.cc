@@ -57,96 +57,60 @@ float* gentime::exec(int* size_p) {
 
 	debug::bar::end();
 
-	/*erosion::simulate(
-		0.1, // inertia,
-		0.001, // min_slope,
-		15.0, // capacity,
+	float** hmap = &heightmap;
+	int new_size = size;
+
+	/*for (int i = 0; i < 4; i ++) {
+		erosion::simulate(
+			0.025, // inertia,
+			0.0001, // min_slope,
+			8.0, // capacity,
+			0.02, // deposition,
+			0.05, // erosion,
+			6.0, // gravity,
+			0.02, // evaporation,
+			5,   // radius
+			30, // max_steps,
+			2, // drops_per_vertex
+			*hmap,
+			new_size
+		);
+
+		new_size = util::upscale(hmap, new_size, 2);
+	}*/
+		erosion::simulate(
+			0.025, // inertia,
+			0.0001, // min_slope,
+			8.0, // capacity,
+			0.02, // deposition,
+			0.05, // erosion,
+			6.0, // gravity,
+			0.02, // evaporation,
+			5,   // radius
+			30, // max_steps,
+			2, // drops_per_vertex
+			*hmap,
+			new_size
+		);
+		new_size = util::upscale(hmap, new_size, 4);
+
+		erosion::simulate(
+		0.2, // inertia,
+		0.0001, // min_slope,
+		2.0, // capacity,
 		0.5, // deposition,
-		0.1, // erosion,
-		0.1, // gravity,
-		0.05, // evaporation,
-		15,   // radius
+		0.01, // erosion,
+		1.0, // gravity,
+		0.2, // evaporation,
+		10, // radius
 		15, // max_steps,
-		3, // drops_per_vertex
-		heightmap,
-		size
-	);*/
+		20, // drops_per_vertex
+		*hmap,
+		new_size
+		);
 
-	/*erosion::simulate(
-		0.25, // inertia,
-		0.01, // min_slope,
-		2.0, // capacity,
-		0.1, // deposition,
-		0.1, // erosion,
-		0.5, // gravity,
-		0.05, // evaporation,
-		1,   // radius
-		15, // max_steps,
-		10, // drops_per_vertex
-		heightmap,
-		size
-	);*/
 
-	debug::save_heightmap("images/a.bmp", size, heightmap);
 
-	erosion::simulate(
-		0.025, // inertia,
-		0.0001, // min_slope,
-		8.0, // capacity,
-		0.02, // deposition,
-		0.05, // erosion,
-		6.0, // gravity,
-		0.02, // evaporation,
-		5,   // radius
-		30, // max_steps,
-		2, // drops_per_vertex
-		heightmap,
-		size
-	);
-
-	debug::save_heightmap("images/b.bmp", size, heightmap);
-
-	/*erosion::simulate(
-		0.025, // inertia,
-		0.01, // min_slope,
-		2.0, // capacity,
-		0.05, // deposition,
-		0.05, // erosion,
-		0.2, // gravity,
-		0.05, // evaporation,
-		10,   // radius
-		10, // max_steps,
-		30, // drops_per_vertex
-		heightmap,
-		size
-	);
-
-	debug::save_heightmap("c.bmp", size, heightmap);*/
-
-	float** upscaled = &heightmap;
-	int upscaled_size = util::upscale(upscaled, size, 2);
-	*size_p = upscaled_size;
-
-	printf("%d\n", upscaled_size);
-
-	debug::save_heightmap("images/c.bmp", upscaled_size, *upscaled);
-
-	erosion::simulate(
-		0.025, // inertia,
-		0.0001, // min_slope,
-		8.0, // capacity,
-		0.02, // deposition,
-		0.05, // erosion,
-		6.0, // gravity,
-		0.02, // evaporation,
-		5,   // radius
-		30, // max_steps,
-		2, // drops_per_vertex
-		*upscaled,
-		upscaled_size
-	);
-
-	debug::save_heightmap("images/d.bmp", upscaled_size, *upscaled);
-
-	return *upscaled;
+	*size_p = new_size;
+	return *hmap;
 }
