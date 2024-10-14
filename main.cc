@@ -16,10 +16,12 @@ int main(int argc, char **argv) {
 	char* worldf = cmd_args::load_str (argc, argv, "-world", NULL);
 
 	size ++;
+	int sizep = size;
 
 	if (gen) {
-		float* heightmap = gentime::exec(size);
-		serialize::save((serialize::World){(uint32_t)(size), heightmap}, worldf);
+		float* heightmap = gentime::exec(&sizep);
+		serialize::save((serialize::World){(uint32_t)(sizep), heightmap}, worldf);
+		DEBUG_LOG("%d", sizep);
 		free(heightmap);
 	}
 	if (run) {

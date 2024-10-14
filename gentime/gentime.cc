@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "../shared/debug.h"
+#include "../shared/util.h"
 #include "perlin.h"
 #include "erosion.h"
 #include <math.h>
 
-float* gentime::exec(int size) {
+float* gentime::exec(int* size_p) {
+	int size = *size_p;
 	float* heightmap = (float*)malloc(sizeof(float) * size * size);
 
 	for (int i = 0; i < size; i ++) {
@@ -23,7 +25,7 @@ float* gentime::exec(int size) {
 	for (int y = 0; y < size; y ++) {
 		debug::bar::step(((float)y / size) * 100.0);
 		for (int x = 0; x < size; x ++) {
-			float falloff = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
+			//float falloff = (farthest_possible_distance - sqrt(pow(x - center, 2) + pow(y - center, 2))) / farthest_possible_distance;
 			/*float island = ((perlin::at(x / 500.0, y / 500.0) + 1) * distance * 10);
 			if (island < 0) island = 0;
 			*/
@@ -32,8 +34,6 @@ float* gentime::exec(int size) {
 			float divisor = 300.0;
 			float influence = 1.0;
 
-
-
 			for (int i = 0; i < 8; i ++) {
 				mountains += (perlin::at(x / divisor, y / divisor)) * influence;
 				divisor /= 2;
@@ -41,8 +41,8 @@ float* gentime::exec(int size) {
 			}
 
 			float val = mountains;
-			val -= 0.2;
-			val += falloff;
+			val += 0.2;
+			//val += falloff;
 			val *= 80;
 
 			/*float steepness = ((perlin::at(x / 700.0, y / 700.0) + 1)) - 0.5;
@@ -99,7 +99,7 @@ float* gentime::exec(int size) {
 		0.02, // evaporation,
 		5,   // radius
 		30, // max_steps,
-		3, // drops_per_vertex
+		2, // drops_per_vertex
 		heightmap,
 		size
 	);
@@ -123,5 +123,30 @@ float* gentime::exec(int size) {
 
 	debug::save_heightmap("c.bmp", size, heightmap);*/
 
-	return heightmap;
+	float** upscaled = &heightmap;
+	int upscaled_size = util::upscale(upscaled, size, 2);
+	*size_p = upscaled_size;
+
+	printf("%d\n", upscaled_size);
+
+	debug::save_heightmap("images/c.bmp", upscaled_size, *upscaled);
+
+	erosion::simulate(
+		0.025, // inertia,
+		0.0001, // min_slope,
+		8.0, // capacity,
+		0.02, // deposition,
+		0.05, // erosion,
+		6.0, // gravity,
+		0.02, // evaporation,
+		5,   // radius
+		30, // max_steps,
+		2, // drops_per_vertex
+		*upscaled,
+		upscaled_size
+	);
+
+	debug::save_heightmap("images/d.bmp", upscaled_size, *upscaled);
+
+	return *upscaled;
 }

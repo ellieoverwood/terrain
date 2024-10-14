@@ -1,5 +1,5 @@
 #pragma once
 
 namespace gentime {
-	float* exec(int size);
+	float* exec(int* size);
 }
