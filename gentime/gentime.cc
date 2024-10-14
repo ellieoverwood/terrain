@@ -87,7 +87,7 @@ float* gentime::exec(int size) {
 		size
 	);*/
 
-	debug::save_heightmap("a.bmp", size, heightmap);
+	debug::save_heightmap("images/a.bmp", size, heightmap);
 
 	erosion::simulate(
 		0.025, // inertia,
@@ -104,7 +104,7 @@ float* gentime::exec(int size) {
 		size
 	);
 
-	debug::save_heightmap("b.bmp", size, heightmap);
+	debug::save_heightmap("images/b.bmp", size, heightmap);
 
 	/*erosion::simulate(
 		0.025, // inertia,

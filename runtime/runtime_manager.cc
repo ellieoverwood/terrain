@@ -10,7 +10,7 @@ long last_time;
 int dev::fps;
 
 void runtime::exec(int chunk, float* heightmap, int size) {
-	debug::save_heightmap("d.bmp", size, heightmap);
+	debug::save_heightmap("images/c.bmp", size, heightmap);
 
 	init(chunk, heightmap, size);
 
